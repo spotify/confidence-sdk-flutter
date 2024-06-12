@@ -88,12 +88,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val wrappedDefaultValue = call.argument<Map<String, Map<String, Any>>>("defaultValue")!!
         val defaultValue: ConfidenceValue.Struct = ConfidenceValue.Struct(wrappedDefaultValue.mapValues { (_, value) -> value.convert() })
         val value = confidence.getValue(key, defaultValue)
-        val networkJson = Json {
-          serializersModule = SerializersModule {
-            contextual(NetworkConfidenceValueSerializer)
-          }
-        }
-        result.success(networkJson.encodeToString(value))
+        result.success(Json.encodeToString(NetworkConfidenceValueSerializer, value))
       }
       "putContext" -> {
         val key = call.argument<String>("key")!!
