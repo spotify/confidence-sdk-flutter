@@ -37,9 +37,22 @@ class _MyAppState extends State<MyApp> {
       } else {
         await _confidenceFlutterSdkPlugin.activateAndFetchAsync();
       }
+      await _confidenceFlutterSdkPlugin.putContext("Yo", "Hello");
       platformVersion =
       (await _confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
-      _confidenceFlutterSdkPlugin.track("navigate", {'screen': 'home', "my_bool": false, "my_int": 1, "my_double": 1.1, "my_map": {"key": "value"}, "my_list": ["value1", "value2"]});
+      platformVersion =
+          (await _confidenceFlutterSdkPlugin.getString("hawkflag.message", "default")).toString();
+      platformVersion =
+          (await _confidenceFlutterSdkPlugin.getBool("hawkflag.enabled", false)).toString();
+      final data = {
+        'screen': 'home',
+        "my_bool": false,
+        "my_int": 1,
+        "my_double": 1.1,
+        "my_map": {"key": "value"},
+        "my_list": ["value1", "value2"]
+      }
+      _confidenceFlutterSdkPlugin.track("navigate", data);
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }

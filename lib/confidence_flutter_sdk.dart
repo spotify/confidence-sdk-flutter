@@ -25,7 +25,7 @@ class ConfidenceFlutterSdk {
     return ConfidenceFlutterSdkPlatform.instance.getString(key, defaultValue);
   }
 
-  Future<Map<String, dynamic>> getObject(String key, Map<String, dynamic> defaultValue) {;
+  Future<Map<String, dynamic>> getObject(String key, Map<String, dynamic> defaultValue) {
     return ConfidenceFlutterSdkPlatform.instance.getObject(key, defaultValue);
   }
 
