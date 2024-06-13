@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 
-import 'package:flutter/services.dart';
 import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,7 +16,9 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  String _object = 'Unknown';
+  String _message = 'Unknown';
+  bool _enabled = false;
   final _confidenceFlutterSdkPlugin = ConfidenceFlutterSdk();
 
   @override
@@ -27,7 +29,9 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    String platformVersion;
+    String message;
+    bool enabled;
+    String object;
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
@@ -38,12 +42,11 @@ class _MyAppState extends State<MyApp> {
         await _confidenceFlutterSdkPlugin.activateAndFetchAsync();
       }
       await _confidenceFlutterSdkPlugin.putContext("Yo", "Hello");
-      platformVersion =
+      object =
       (await _confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
-      platformVersion =
+      message =
           (await _confidenceFlutterSdkPlugin.getString("hawkflag.message", "default")).toString();
-      platformVersion =
-          (await _confidenceFlutterSdkPlugin.getBool("hawkflag.enabled", false)).toString();
+      enabled = await _confidenceFlutterSdkPlugin.getBool("hawkflag.enabled", false);
       final data = {
         'screen': 'home',
         "my_bool": false,
@@ -51,10 +54,12 @@ class _MyAppState extends State<MyApp> {
         "my_double": 1.1,
         "my_map": {"key": "value"},
         "my_list": ["value1", "value2"]
-      }
+      };
       _confidenceFlutterSdkPlugin.track("navigate", data);
     } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
+      message = 'Failed to get platform version.';
+      enabled = false;
+      object = 'Failed to get object.';
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -63,7 +68,9 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     setState(() {
-      _platformVersion = platformVersion;
+      _enabled = enabled;
+      _message = message;
+      _object = object;
     });
   }
 
@@ -75,7 +82,23 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: ListView.builder(
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              var title = "";
+              switch (index) {
+                case 0:
+                  title = 'Message: $_message\n';
+                case 1:
+                  title = 'Enabled: $_enabled\n';
+                case 2:
+                  title = 'Object: \n$_object\n';
+              }
+              return ListTile(
+                title: Text('Evaluation -> $title\n'),
+              );
+            },
+          ),
         ),
       ),
     );
