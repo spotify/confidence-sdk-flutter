@@ -15,7 +15,7 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
         case "setup":
             let apiKey = call.arguments as! String
             self.confidence = Confidence.Builder(clientSecret: apiKey)
-                .sdkId("SDK_ID_SWIFT_CONFIDENCE")
+                .sdkId("SDK_ID_FLUTTER_IOS_CONFIDENCE")
                 .sdkVersion("0.0.1")
                 .build()
             result("")
