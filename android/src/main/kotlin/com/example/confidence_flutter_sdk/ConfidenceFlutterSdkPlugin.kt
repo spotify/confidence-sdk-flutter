@@ -3,11 +3,10 @@ package com.example.confidence_flutter_sdk
 import android.content.Context
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
 import com.spotify.confidence.ConfidenceValue
-import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import com.spotify.confidence.client.SdkMetadata
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -16,7 +15,6 @@ import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /** ConfidenceFlutterSdkPlugin */
@@ -39,7 +37,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
     when(call.method) {
       "setup" -> {
         val apiKey = call.arguments as String
-        confidence = ConfidenceFactory.create(context ,apiKey)
+        confidence = ConfidenceFactory.create(context ,apiKey, sdk = SdkMetadata("SDK_ID_FLUTTER_ANDROID_CONFIDENCE", "0.0.1"))
         result.success(null)
       }
       "fetchAndActivate" -> {
