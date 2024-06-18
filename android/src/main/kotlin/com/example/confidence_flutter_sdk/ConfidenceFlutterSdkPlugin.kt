@@ -37,7 +37,11 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
     when(call.method) {
       "setup" -> {
         val apiKey = call.arguments as String
-        confidence = ConfidenceFactory.create(context ,apiKey, sdk = SdkMetadata("SDK_ID_FLUTTER_ANDROID_CONFIDENCE", "0.0.1"))
+        confidence = ConfidenceFactory.create(
+          context,
+          apiKey,
+          sdk = SdkMetadata("SDK_ID_FLUTTER_ANDROID_CONFIDENCE", "0.0.1")
+        )
         result.success(null)
       }
       "fetchAndActivate" -> {
