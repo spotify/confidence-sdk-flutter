@@ -38,6 +38,9 @@ jobs:
       working-directory: example
       run: flutter build apk --release
 
+    - name: Publish dry-run
+      run: dart pub publish --dry-run
+
     - name: Build iOS
       working-directory: example
       run: git submodule sync --recursive && git submodule update --init --recursive && flutter build ios --release --no-codesign
