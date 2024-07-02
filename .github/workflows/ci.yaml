@@ -42,4 +42,6 @@ jobs:
 
     - name: Build iOS
       working-directory: example
-      run: flutter build ios --release --no-codesign
+      run: |
+      git submodule sync --recursive && git submodule update --init --recursive
+      flutter build ios --release --no-codesign
