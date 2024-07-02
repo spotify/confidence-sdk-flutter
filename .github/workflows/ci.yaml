@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    env:
+      JAVA_HOME_8_X64: /usr/lib/jvm/java-8-openjdk-amd64
+      FLUTTER_CHANNEL: stable
+      FLUTTER_VERSION: 3.3.2 # Replace with your required Flutter version
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Java
+      uses: actions/setup-java@v2
+      with:
+        java-version: '8'
+
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: ${{ env.FLUTTER_CHANNEL }}
+
+    - name: Install dependencies
+      working-directory: example
+      run: flutter pub get
+
+    - name: Build Android
+      working-directory: example
+      run: flutter build apk --release
+
+    - name: Build iOS
+      working-directory: example
+      run: flutter build ios --release --no-codesign
+
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-artifacts
+        path: |
+          example/build/app/outputs/flutter-apk/app-release.apk
+          example/build/ios/iphoneos/Runner.app
+          
