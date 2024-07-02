@@ -27,6 +27,16 @@ jobs:
         java-version: 11
         distribution: 'zulu'
 
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: ${{ env.FLUTTER_VERSION }}
+        channel: ${{ env.FLUTTER_CHANNEL }}
+
+    - name: Install dependencies
+      working-directory: example
+      run: flutter pub get
+
     - name: Build Android
       working-directory: example
       run: flutter build apk --release
