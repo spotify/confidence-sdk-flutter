@@ -53,7 +53,7 @@ jobs:
 
       - name: Remove the submodule
         working-directory: ios/Classes
-        run: rm -rf confidence-sdk
+        run: rm -rf confidence-sdk && git rm -r --cached .
 
       - name: Setup Pub Credentials
         shell: bash
