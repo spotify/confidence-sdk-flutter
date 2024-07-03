@@ -3,7 +3,7 @@
 
 # Checking whether the secrets are available as environment
 # variables or not.
-if [ -z "${PUB_ACCESS_TOKEN" ]; then
+if [ -z "${PUB_ACCESS_TOKEN}" ]; then
   echo "Missing PUB_ACCESS_TOKEN environment variable"
   exit 1
 fi
