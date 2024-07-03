@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.5](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.4...0.0.5) (2024-07-03)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** Add copy removal of sub module ([#12](https://github.com/spotify/confidence-sdk-flutter/issues/12)) ([a756da2](https://github.com/spotify/confidence-sdk-flutter/commit/a756da2c5da4a85deb3f26d3813d50e7bda7a020))
+
+
+### 🧹 Chore
+
+* **main:** release 0.0.4 ([#13](https://github.com/spotify/confidence-sdk-flutter/issues/13)) ([7b23d2e](https://github.com/spotify/confidence-sdk-flutter/commit/7b23d2e8f1008322e3e3ba4b54118ed063aaf37d))
+
 ## [0.0.4](https://github.com/spotify/confidence-sdk-flutter/compare/v0.0.3...0.0.4) (2024-07-03)
 
 
