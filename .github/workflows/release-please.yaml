@@ -29,6 +29,9 @@ jobs:
   flutter-release:
     needs: release-please
     runs-on: ubuntu-latest
+    env:
+      FLUTTER_CHANNEL: stable
+      FLUTTER_VERSION: 3.22.2
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - uses: actions/checkout@v4
@@ -40,10 +43,6 @@ jobs:
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
-
-      - name: Install dependencies
-        working-directory: example
-        run: flutter pub get
 
       - name: Setup Pub Credentials
         shell: bash
