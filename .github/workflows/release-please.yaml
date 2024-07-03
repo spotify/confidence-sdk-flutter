@@ -1,0 +1,59 @@
+on:
+  push:
+    branches:
+      - main
+
+name: Run Release Please
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+
+    # Release-please creates a PR that tracks all changes
+    steps:
+      - uses: google-github-actions/release-please-action@v3
+        id: release
+        with:
+          release-type: simple
+          command: manifest
+          default-branch: main
+
+      - name: Dump Release Please Output
+        env:
+          RELEASE_PLEASE_OUTPUT: ${{ toJson(steps.release.outputs) }}
+        run: |
+          echo "$RELEASE_PLEASE_OUTPUT"
+
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+
+  flutter-release:
+    needs: release-please
+    runs-on: ubuntu-latest
+    env:
+      FLUTTER_CHANNEL: stable
+      FLUTTER_VERSION: 3.22.2
+    if: ${{ needs.release-please.outputs.release_created }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-please.outputs.release_tag_name }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+
+      - name: Setup Pub Credentials
+        shell: bash
+        env:
+          PUB_ACCESS_TOKEN: ${{ secrets.PUB_ACCESS_TOKEN }}
+          PUB_REFRESH_TOKEN: ${{ secrets.PUB_REFRESH_TOKEN }}
+          PUB_TOKEN_ENDPOINT: ${{ secrets.PUB_TOKEN_ENDPOINT }}
+          PUB_EXPIRATION: ${{ secrets.PUB_EXPIRATION }}
+        run: |
+          sh ./pub_login.sh
+      - name: Check Publish Warnings
+        run: pub publish --dry-run
+#      - name: Publish Package
+#        run: pub publish -f
