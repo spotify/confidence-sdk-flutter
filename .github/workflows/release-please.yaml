@@ -38,11 +38,22 @@ jobs:
         with:
           ref: ${{ needs.release-please.outputs.release_tag_name }}
 
+      - name: fetch submodules
+        run: git submodule update --init --recursive
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
+
+      - name: Copy iOS
+        working-directory: ios/Classes
+        run: cp -r confidence-sdk/Sources/Confidence .
+
+      - name: Remove the submodule
+        working-directory: ios/Classes
+        run: rm -rf confidence-sdk
 
       - name: Setup Pub Credentials
         shell: bash
