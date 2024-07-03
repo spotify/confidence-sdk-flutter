@@ -24,7 +24,8 @@ if [ -z "${PUB_EXPIRATION}" ]; then
 fi
 
 # Create credentials.json file.
-cat <<EOF > ~/.pub-cache/credentials.json
+mkdir -p  $HOME/.config/dart/
+cat <<EOF > $HOME/.config/dart/pub-credentials.json
 {
   "accessToken":"${PUB_ACCESS_TOKEN}",
   "refreshToken":"${PUB_REFRESH_TOKEN}",
