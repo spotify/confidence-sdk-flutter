@@ -1,6 +1,8 @@
 # Flutter Confidence SDK
 
-Flutter implementation of the [Confidence](https://confidence.spotify.com/).
+Flutter implementation of the [Confidence](https://confidence.spotify.com/) SDK.
+
+This SDK uses the [Android](https://github.com/spotify/confidence-sdk-android) and [iOS](https://github.com/spotify/confidence-sdk-swift) respectively under the hood.
 
 ## Usage
 
