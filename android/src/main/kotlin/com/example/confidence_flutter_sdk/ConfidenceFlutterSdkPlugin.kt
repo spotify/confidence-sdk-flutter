@@ -35,6 +35,9 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
 
   override fun onMethodCall(call: MethodCall, result: Result) {
     when(call.method) {
+      "flush" -> {
+        confidence.flush()
+      }
       "setup" -> {
         val apiKey = call.arguments as String
         confidence = ConfidenceFactory.create(

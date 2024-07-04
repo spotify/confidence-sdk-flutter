@@ -56,6 +56,7 @@ class _MyAppState extends State<MyApp> {
         "my_list": ["value1", "value2"]
       };
       _confidenceFlutterSdkPlugin.track("navigate", data);
+      _confidenceFlutterSdkPlugin.flush();
     } on PlatformException {
       message = 'Failed to get platform version.';
       enabled = false;

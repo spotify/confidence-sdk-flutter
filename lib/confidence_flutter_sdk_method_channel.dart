@@ -101,6 +101,14 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   }
 
   @override
+  Future<void> flush() async {
+    await methodChannel
+        .invokeMethod<void>('flush');
+  }
+
+
+
+  @override
   Future<int> getInt(String key, int defaultValue) async {
     final value = await methodChannel
         .invokeMethod<int>(
