@@ -13,6 +13,10 @@ class ConfidenceFlutterSdk {
     ConfidenceFlutterSdkPlatform.instance.track(eventName, data);
   }
 
+  void flush() {
+    ConfidenceFlutterSdkPlatform.instance.flush();
+  }
+
   Future<bool> getBool(String key, bool defaultValue) {
     return ConfidenceFlutterSdkPlatform.instance.getBool(key, defaultValue);
   }

@@ -12,6 +12,13 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
+        case "flush":
+            guard let confidence = self.confidence else {
+                result("")
+                return
+            }
+            confidence.flush()
+            break;
         case "setup":
             let apiKey = call.arguments as! String
             self.confidence = Confidence.Builder(clientSecret: apiKey)
@@ -66,7 +73,6 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             let data = args["data"] as! Dictionary<String, Dictionary<String, Any>>
             let convertedData = data.convert()
             try? confidence?.track(eventName: eventName, data: convertedData)
-            confidence?.flush()
             break;
         case "getBool":
             let arguments = call.arguments as! Dictionary<String, Any>
@@ -117,9 +123,9 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             break;
         case "getObject":
             let arguments = call.arguments as! Dictionary<String, Any>
-             let defaultValueWrapped = arguments["defaultValue"] as! Dictionary<String, Dictionary<String, Any>>
-             let defaultValue = defaultValueWrapped.convert()
-             let key = arguments["key"] as! String
+            let defaultValueWrapped = arguments["defaultValue"] as! Dictionary<String, Dictionary<String, Any>>
+            let defaultValue = defaultValueWrapped.convert()
+            let key = arguments["key"] as! String
             guard let confidence = self.confidence else {
                 result([:])
                 return

@@ -52,7 +52,11 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
   }
 
   void track(String eventName, Map<String, dynamic> data) {
-    throw UnimplementedError('getBool() has not been implemented.');
+    throw UnimplementedError('track has not been implemented.');
+  }
+
+  void flush() {
+    throw UnimplementedError('flush has not been implemented.');
   }
 
   Future<double> getDouble(String key, double defaultValue) async {
