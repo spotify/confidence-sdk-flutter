@@ -56,4 +56,3 @@ jobs:
     - name: Build iOS
       working-directory: example
       run: flutter build ios --release --no-codesign
-
