@@ -10,6 +10,23 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
 
     var confidence: Confidence? = nil
 
+    private func loggerLevel(from string: String) -> LoggerLevel {
+        switch string.uppercased() {
+        case "VERBOSE":
+            return .TRACE
+        case "DEBUG":
+            return .DEBUG
+        case "WARN":
+            return .WARN
+        case "ERROR":
+            return .ERROR
+        case "NONE":
+            return .NONE
+        default:
+            return .NONE
+        }
+    }
+
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "flush":
@@ -20,8 +37,11 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             confidence.flush()
             break;
         case "setup":
-            let apiKey = call.arguments as! String
-            self.confidence = Confidence.Builder(clientSecret: apiKey)
+            let arguments = call.arguments as! Dictionary<String, Any>
+            let apiKey = arguments["apiKey"] as! String
+            let debugLoggingLevel = arguments["debugLoggingLevel"] as! String
+            
+            self.confidence = Confidence.Builder(clientSecret: apiKey, loggerLevel: loggerLevel(from: debugLoggingLevel))
                 .build()
             result("")
             break;

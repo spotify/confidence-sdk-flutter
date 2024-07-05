@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
 
+import 'confidence_flutter_sdk.dart';
 import 'confidence_flutter_sdk_platform_interface.dart';
 
 /// An implementation of [ConfidenceFlutterSdkPlatform] that uses method channels.
@@ -11,8 +12,16 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   final methodChannel = const MethodChannel('confidence_flutter_sdk');
 
   @override
-  Future<void> setup(String apiKey) async {
-    return await methodChannel.invokeMethod<void>('setup', apiKey);
+  Future<void> setup(String apiKey,
+      DebugLoggerLevel debugLoggerLevelEnum) async {
+    var debugLoggerLevel = debugLoggerLevelEnum.name;
+    return await methodChannel.invokeMethod<void>(
+        'setup',
+        {
+          'apiKey': apiKey,
+          'debugLoggerLevel': debugLoggerLevel
+        }
+    );
   }
 
   @override
@@ -57,7 +66,8 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   }
 
   @override
-  Future<Map<String, dynamic>> getObject(String key, Map<String, dynamic> defaultValue) async {
+  Future<Map<String, dynamic>> getObject(String key,
+      Map<String, dynamic> defaultValue) async {
     final wrappedDefaultValue = defaultValue.map((key, value) {
       return MapEntry(key, toTypedValue(value));
     });
@@ -105,7 +115,6 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
     await methodChannel
         .invokeMethod<void>('flush');
   }
-
 
 
   @override

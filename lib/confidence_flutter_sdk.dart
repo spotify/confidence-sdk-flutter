@@ -37,8 +37,8 @@ class ConfidenceFlutterSdk {
     return ConfidenceFlutterSdkPlatform.instance.getDouble(key, defaultValue);
   }
 
-  Future<void> setup(String apiKey) async {
-    return await ConfidenceFlutterSdkPlatform.instance.setup(apiKey);
+  Future<void> setup(String apiKey, DebugLoggerLevel debugLoggerLevel) async {
+    return await ConfidenceFlutterSdkPlatform.instance.setup(apiKey, debugLoggerLevel);
   }
 
   Future<void> fetchAndActivate() async {
@@ -48,4 +48,12 @@ class ConfidenceFlutterSdk {
   Future<void> activateAndFetchAsync() async {
     return ConfidenceFlutterSdkPlatform.instance.activateAndFetchAsync();
   }
+}
+
+enum DebugLoggerLevel {
+  VERBOSE,
+  DEBUG,
+  WARN,
+  ERROR,
+  NONE,
 }

@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'confidence_flutter_sdk.dart';
 import 'confidence_flutter_sdk_method_channel.dart';
 
 abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
@@ -23,7 +24,7 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<void> setup(String apiKey) {
+  Future<void> setup(String apiKey, DebugLoggerLevel debugLoggerLevel) {
     throw UnimplementedError('setup() has not been implemented.');
   }
 
