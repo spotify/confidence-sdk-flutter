@@ -37,7 +37,11 @@ jobs:
         with:
           model: 'iPhone 15'
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+
+      - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
       - run: cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart
