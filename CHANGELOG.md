@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.5](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.4...0.0.5) (2024-07-05)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** Add copy removal of sub module ([#12](https://github.com/spotify/confidence-sdk-flutter/issues/12)) ([a756da2](https://github.com/spotify/confidence-sdk-flutter/commit/a756da2c5da4a85deb3f26d3813d50e7bda7a020))
+* **ci:** Fix pub warnings ([#15](https://github.com/spotify/confidence-sdk-flutter/issues/15)) ([3d9194c](https://github.com/spotify/confidence-sdk-flutter/commit/3d9194c4d9f059d9803ad4f690b8bf6653600d40))
+
+
+### ✨ New Features
+
+* Add flush method ([#19](https://github.com/spotify/confidence-sdk-flutter/issues/19)) ([0299534](https://github.com/spotify/confidence-sdk-flutter/commit/02995341c06e0d5e2343857da6394511d6c26b88))
+
+
+### 🧹 Chore
+
+* **main:** release 0.0.4 ([#13](https://github.com/spotify/confidence-sdk-flutter/issues/13)) ([7b23d2e](https://github.com/spotify/confidence-sdk-flutter/commit/7b23d2e8f1008322e3e3ba4b54118ed063aaf37d))
+* **main:** release 0.0.4 ([#16](https://github.com/spotify/confidence-sdk-flutter/issues/16)) ([43b4423](https://github.com/spotify/confidence-sdk-flutter/commit/43b4423e88aeb7869c50b2ef3e6155958475004c))
+
+
+### 📚 Documentation
+
+* Add running example app in xcode in readme ([#20](https://github.com/spotify/confidence-sdk-flutter/issues/20)) ([4d0142b](https://github.com/spotify/confidence-sdk-flutter/commit/4d0142b45e58a1f5bb5ae9771a1a40615916ab66))
+* minor corrections ([#18](https://github.com/spotify/confidence-sdk-flutter/issues/18)) ([e02c6d7](https://github.com/spotify/confidence-sdk-flutter/commit/e02c6d720d7c5bf6ece0bfcf39b7f5965aa7acde))
+
 ## [0.0.4](https://github.com/spotify/confidence-sdk-flutter/compare/v0.0.3...0.0.4) (2024-07-03)
 
 
