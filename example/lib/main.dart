@@ -3,23 +3,32 @@ import 'dart:async';
 import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+  final Completer<void> _initCompleter = Completer<void>();
+
+  Future<void> initDone() async {
+    return _initCompleter.future;
+  }
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  // ignore: no_logic_in_create_state
+  State<MyApp> createState() => _MyAppState(_initCompleter);
 }
 
 class _MyAppState extends State<MyApp> {
   String _object = 'Unknown';
   String _message = 'Unknown';
-  bool _enabled = false;
   final _confidenceFlutterSdkPlugin = ConfidenceFlutterSdk();
+  final Completer<void> initCompleter;
+
+  _MyAppState(this.initCompleter);
 
   @override
   void initState() {
@@ -30,23 +39,19 @@ class _MyAppState extends State<MyApp> {
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String message;
-    bool enabled;
     String object;
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      await _confidenceFlutterSdkPlugin.setup("API_KEY");
-      if(await _confidenceFlutterSdkPlugin.isStorageEmpty()) {
-        await _confidenceFlutterSdkPlugin.fetchAndActivate();
-      } else {
-        await _confidenceFlutterSdkPlugin.activateAndFetchAsync();
-      }
-      await _confidenceFlutterSdkPlugin.putContext("Yo", "Hello");
+      await dotenv.load(fileName: ".env");
+      await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!);
+      await _confidenceFlutterSdkPlugin.putContext("targeting_key", "random");
+      await _confidenceFlutterSdkPlugin.putContext("user", <String, dynamic>{"country": "SE"});
+      await _confidenceFlutterSdkPlugin.fetchAndActivate();
       object =
-      (await _confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
+      (await _confidenceFlutterSdkPlugin.getObject("kotlin-test-flag", <String, dynamic>{})).toString();
       message =
-          (await _confidenceFlutterSdkPlugin.getString("hawkflag.message", "default")).toString();
-      enabled = await _confidenceFlutterSdkPlugin.getBool("hawkflag.enabled", false);
+          (await _confidenceFlutterSdkPlugin.getInt("kotlin-test-flag.my-integer", 0)).toString();
       final data = {
         'screen': 'home',
         "my_bool": false,
@@ -59,7 +64,6 @@ class _MyAppState extends State<MyApp> {
       _confidenceFlutterSdkPlugin.flush();
     } on PlatformException {
       message = 'Failed to get platform version.';
-      enabled = false;
       object = 'Failed to get object.';
     }
 
@@ -69,10 +73,10 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     setState(() {
-      _enabled = enabled;
       _message = message;
       _object = object;
     });
+    initCompleter.complete();
   }
 
   @override
@@ -84,19 +88,17 @@ class _MyAppState extends State<MyApp> {
         ),
         body: Center(
           child: ListView.builder(
-            itemCount: 3,
+            itemCount: 2,
             itemBuilder: (context, index) {
               var title = "";
               switch (index) {
                 case 0:
-                  title = 'Message: $_message\n';
+                  title = _message;
                 case 1:
-                  title = 'Enabled: $_enabled\n';
-                case 2:
-                  title = 'Object: \n$_object\n';
+                  title = _object;
               }
               return ListTile(
-                title: Text('Evaluation -> $title\n'),
+                title: Text('$title\n'),
               );
             },
           ),

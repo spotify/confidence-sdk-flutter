@@ -1,0 +1,47 @@
+name: Test-iOS
+on:
+  push:
+    branches:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+jobs:
+  ios-test:
+    runs-on: macos-latest
+
+    env:
+      FLUTTER_CHANNEL: stable
+      FLUTTER_VERSION: 3.22.2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: fetch submodules
+        run: git submodule update --init --recursive
+
+      - name: Copy iOS
+        working-directory: ios/Classes
+        run: cp -r confidence-sdk/Sources/Confidence .
+
+      - name: Remove the submodule
+        working-directory: ios/Classes
+        run: rm -rf confidence-sdk
+
+      - name: Remove git submodule
+        working-directory: ios/Classes
+        run: git rm confidence-sdk
+
+      - uses: futureware-tech/simulator-action@v3
+        with:
+          model: 'iPhone 15'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: ${{ env.FLUTTER_CHANNEL }}
+
+      - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
+      - run: cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart

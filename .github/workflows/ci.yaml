@@ -36,6 +36,7 @@ jobs:
       working-directory: example
       run: flutter pub get
 
+    - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
     - name: Build Android
       working-directory: example
       run: flutter build apk --release
@@ -55,4 +56,3 @@ jobs:
     - name: Build iOS
       working-directory: example
       run: flutter build ios --release --no-codesign
-
