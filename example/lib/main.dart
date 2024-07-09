@@ -35,7 +35,7 @@ class _MyAppState extends State<MyApp> {
     // Platform messages may fail, so we use a try/catch PlatformException.
     // We also handle the message potentially returning null.
     try {
-      await _confidenceFlutterSdkPlugin.setup("API_KEY");
+      await _confidenceFlutterSdkPlugin.setup("API_KEY", DebugLoggerLevel.DEBUG);
       if(await _confidenceFlutterSdkPlugin.isStorageEmpty()) {
         await _confidenceFlutterSdkPlugin.fetchAndActivate();
       } else {

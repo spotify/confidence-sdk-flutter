@@ -4,6 +4,7 @@ import android.content.Context
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.DebugLoggerLevel
 import com.spotify.confidence.client.SdkMetadata
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -39,11 +40,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         confidence.flush()
       }
       "setup" -> {
-        val apiKey = call.arguments as String
+        val apiKey = call.argument<String>("apiKey") as String
+        val debugLoggerLevel = call.argument<String>("debugLoggerLevel") as String
         confidence = ConfidenceFactory.create(
           context,
           apiKey,
-          sdk = SdkMetadata("SDK_ID_FLUTTER_ANDROID_CONFIDENCE", "0.0.1")
+          debugLoggerLevel = DebugLoggerLevel.valueOf(debugLoggerLevel)
         )
         result.success(null)
       }
