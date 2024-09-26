@@ -70,4 +70,8 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
   Future<int> getInt(String key, int defaultValue) async {
     throw UnimplementedError('getInt() has not been implemented.');
   }
+
+  Future<Map<String, dynamic>> readAllFlags() {
+    throw UnimplementedError('readAllFlags() has not been implemented.');
+  }
 }

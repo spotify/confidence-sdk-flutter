@@ -4,6 +4,10 @@ import android.content.Context
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceValue
+import com.spotify.confidence.FlagResolution
+import com.spotify.confidence.cache.DiskStorage
+import com.spotify.confidence.client.ConfidenceValueMap
+import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.SdkMetadata
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -16,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import java.io.File
 
 /** ConfidenceFlutterSdkPlugin */
 class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -95,6 +100,13 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val value = confidence.getValue(key, defaultValue)
         result.success(Json.encodeToString(NetworkConfidenceValueSerializer, value))
       }
+      "readAllFlags" -> {
+        val flags = readAllFlags()
+        val map = mutableMapOf<String, ConfidenceValue>()
+        flags.flags.associateByTo(map, { it.flag }, { ConfidenceValue.Struct(it.value) })
+        print(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+        result.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+      }
       "putContext" -> {
         val key = call.argument<String>("key")!!
         val value = call.argument<Map<String, Any>>("value")!!.convert()
@@ -107,6 +119,17 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         confidence.track(eventName, data)
       }
       else -> result.notImplemented()
+    }
+  }
+
+  private fun readAllFlags(): FlagResolution {
+    val flagsFile = File(context.filesDir, "confidence_flags_cache.json")
+    if (!flagsFile.exists()) return FlagResolution.EMPTY
+    val fileText: String = flagsFile.bufferedReader().use { it.readText() }
+    return if (fileText.isEmpty()) {
+      FlagResolution.EMPTY
+    } else {
+      Json.decodeFromString(fileText)
     }
   }
 

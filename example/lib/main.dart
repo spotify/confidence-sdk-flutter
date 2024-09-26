@@ -49,9 +49,9 @@ class _MyAppState extends State<MyApp> {
       await _confidenceFlutterSdkPlugin.putContext("user", <String, dynamic>{"country": "SE"});
       await _confidenceFlutterSdkPlugin.fetchAndActivate();
       object =
-      (await _confidenceFlutterSdkPlugin.getObject("kotlin-test-flag", <String, dynamic>{})).toString();
+      (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
       message =
-          (await _confidenceFlutterSdkPlugin.getInt("kotlin-test-flag.my-integer", 0)).toString();
+          (_confidenceFlutterSdkPlugin.getInt("ludwigs-new-test-flag.struct-key.string-key", 0)).toString();
       final data = {
         'screen': 'home',
         "my_bool": false,
