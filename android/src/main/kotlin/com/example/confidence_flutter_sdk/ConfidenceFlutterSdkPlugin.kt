@@ -111,6 +111,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val key = call.argument<String>("key")!!
         val value = call.argument<Map<String, Any>>("value")!!.convert()
         confidence.putContext(key, value)
+        result.success(null)
       }
       "track" -> {
         val eventName = call.argument<String>("eventName")!!

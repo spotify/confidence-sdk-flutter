@@ -4,12 +4,16 @@ import 'confidence_flutter_sdk_platform_interface.dart';
 
 class ConfidenceFlutterSdk {
   Map<String, dynamic> _flags = {};
+  bool isInitialized = false;
   Future<bool> isStorageEmpty() async {
     return ConfidenceFlutterSdkPlatform.instance.isStorageEmpty();
   }
 
   Future<void> putContext(String key, dynamic value) async {
-    ConfidenceFlutterSdkPlatform.instance.putContext(key, value);
+    await ConfidenceFlutterSdkPlatform.instance.putContext(key, value);
+    if(isInitialized) {
+      await fetchAndActivate();
+    }
   }
 
   void track(String eventName, Map<String, dynamic> data) {
@@ -84,16 +88,17 @@ class ConfidenceFlutterSdk {
   }
 
   Future<void> fetchAndActivate() async {
+    await ConfidenceFlutterSdkPlatform.instance.fetchAndActivate();
     await fillAllFlags();
-    return await ConfidenceFlutterSdkPlatform.instance.fetchAndActivate();
   }
 
   Future<void> fillAllFlags() async {
     _flags = await ConfidenceFlutterSdkPlatform.instance.readAllFlags();
+    isInitialized = true;
   }
 
   Future<void> activateAndFetchAsync() async {
+    await ConfidenceFlutterSdkPlatform.instance.activateAndFetchAsync();
     await fillAllFlags();
-    return ConfidenceFlutterSdkPlatform.instance.activateAndFetchAsync();
   }
 }
