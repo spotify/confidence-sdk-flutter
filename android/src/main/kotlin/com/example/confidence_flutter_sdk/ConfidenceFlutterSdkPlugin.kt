@@ -102,8 +102,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
       }
       "readAllFlags" -> {
         val flags = readAllFlags()
-        val map = mutableMapOf<String, ConfidenceValue>()
-        flags.flags.associateByTo(map, { it.flag }, { ConfidenceValue.Struct(it.value) })
+        val map = flags.flags.associateBy({ it.flag }, { ConfidenceValue.Struct(it.value) })
         result.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
       }
       "putContext" -> {
