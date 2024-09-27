@@ -19,6 +19,20 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             }
             confidence.flush()
             break;
+        case "readAllFlags":
+            guard let flags = try? readAllFlags() else {
+                result("{}")
+                return
+            }
+            let map = flags.reduce(into: [String: ConfidenceValue]()) { map, flag in
+                map[flag.flag] = flag.value
+            }
+            let networkMessage = TypeMapper.convert(structure: map)
+            let encoder = JSONEncoder()
+            let data = try! encoder.encode(networkMessage)
+            let str = String(decoding: data, as: UTF8.self)
+            result(str)
+            break;
         case "setup":
             let apiKey = call.arguments as! String
             self.confidence = Confidence.Builder(clientSecret: apiKey)
@@ -142,6 +156,12 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             result(FlutterMethodNotImplemented)
         }
     }
+}
+
+func readAllFlags() throws -> [ResolvedValue] {
+    let storage = DefaultStorage(filePath: "confidence.flags.resolve")
+    let savedFlags = try storage.load(defaultValue: FlagResolution.EMPTY)
+    return savedFlags.flags
 }
 
 extension Dictionary<String, Dictionary<String, Any>> {
