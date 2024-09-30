@@ -57,6 +57,12 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   }
 
   @override
+  Future<Map<String, dynamic>> readAllFlags() async {
+    final value = await methodChannel.invokeMethod<String>('readAllFlags');
+    return value != null ? jsonDecode(value) : {};
+  }
+
+  @override
   Future<Map<String, dynamic>> getObject(String key, Map<String, dynamic> defaultValue) async {
     final wrappedDefaultValue = defaultValue.map((key, value) {
       return MapEntry(key, toTypedValue(value));

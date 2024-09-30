@@ -46,12 +46,11 @@ class _MyAppState extends State<MyApp> {
       await dotenv.load(fileName: ".env");
       await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!);
       await _confidenceFlutterSdkPlugin.putContext("targeting_key", "random");
-      await _confidenceFlutterSdkPlugin.putContext("user", <String, dynamic>{"country": "SE"});
       await _confidenceFlutterSdkPlugin.fetchAndActivate();
       object =
-      (await _confidenceFlutterSdkPlugin.getObject("kotlin-test-flag", <String, dynamic>{})).toString();
+      (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
       message =
-          (await _confidenceFlutterSdkPlugin.getInt("kotlin-test-flag.my-integer", 0)).toString();
+          (_confidenceFlutterSdkPlugin.getString("ludwigs-new-test-flag.struct-key.string-key", "0"));
       final data = {
         'screen': 'home',
         "my_bool": false,

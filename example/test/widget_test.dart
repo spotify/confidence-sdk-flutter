@@ -18,12 +18,14 @@ void main() {
       if(count == 0) {
         final textWidget = element.widget as Text;
         final string = textWidget.data?.trim() ?? "";
-        expect(string, "4");
+        expect(string, "1337");
       }
       if(count == 1) {
         final textWidget = element.widget as Text;
         final string = textWidget.data?.trim() ?? "";
-        expect(string, "{my-integer: 4}");
+        expect(string.contains("enabled"), true);
+        expect(string.contains("message"), true);
+        expect(string.contains("color"), true);
       }
       count++;
     });
