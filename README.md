@@ -22,6 +22,16 @@ final confidence = ConfidenceFlutterSdk();
 await confidence.setup("API_KEY");
 ```
 
+Context could be passed to the sdk as follows:
+```dart
+await confidence.putContext(key, value)
+```
+
+Multiple context elements could be send to the sdk as follows:
+```dart
+await confidence.putAllContext(map)
+```
+
 after this initial setup we can start fetching and accessing the flags. 
 
 ```dart
