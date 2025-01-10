@@ -9,6 +9,7 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
     }
 
     var confidence: Confidence? = nil
+    var lifecycleProducer: ConfidenceAppLifecycleProducer? = nil
 
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
@@ -90,6 +91,15 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                 return convertValue(type, wrappedValue["value"]!)
             }
             confidence?.putContext(context: map)
+        case "trackApplicationLifecycleState":
+            if(lifecycleProducer == nil) {
+                lifecycleProducer = ConfidenceAppLifecycleProducer()
+            }
+            guard let producer = lifecycleProducer else {
+                result("")
+                break;
+            }
+            confidence?.track(producer: producer)
             result("")
             break;
         case "track":

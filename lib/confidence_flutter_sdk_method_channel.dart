@@ -21,6 +21,11 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   }
 
   @override
+  Future<void> trackApplicationLifecycleState() async {
+    return await methodChannel.invokeMethod<void>('trackApplicationLifecycleState');
+  }
+
+  @override
   Future<void> activateAndFetchAsync() async {
     return await methodChannel.invokeMethod<void>('activateAndFetchAsync');
   }

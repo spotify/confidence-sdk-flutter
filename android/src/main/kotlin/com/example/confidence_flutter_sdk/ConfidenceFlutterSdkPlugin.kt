@@ -1,6 +1,8 @@
 package com.example.confidence_flutter_sdk
 
 import android.content.Context
+import androidx.lifecycle.LifecycleObserver
+import com.spotify.confidence.AndroidLifecycleEventProducer
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceValue
@@ -29,6 +31,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   private lateinit var confidence: Confidence
   private val coroutineScope = CoroutineScope(Dispatchers.IO)
   private lateinit var context: Context
+  private lateinit var application: android.app.Application
 
   override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
     channel = MethodChannel(flutterPluginBinding.binaryMessenger, "confidence_flutter_sdk")
@@ -65,6 +68,14 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
       "isStorageEmpty" -> {
         val isEmpty = confidence.isStorageEmpty()
         result.success(isEmpty)
+      }
+      "trackApplicationLifecycleState" -> {
+        confidence.track(
+          AndroidLifecycleEventProducer(
+            application = application,
+            trackActivities = true
+          ))
+        result.success(null)
       }
       "getString" -> {
         val key = call.argument<String>("key")!!
@@ -141,6 +152,7 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
 
   override fun onAttachedToActivity(binding: ActivityPluginBinding) {
     context = binding.activity.applicationContext
+    application = binding.activity.application
   }
 
   override fun onDetachedFromActivityForConfigChanges() {

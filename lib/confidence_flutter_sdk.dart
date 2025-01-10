@@ -108,4 +108,8 @@ class ConfidenceFlutterSdk {
     await ConfidenceFlutterSdkPlatform.instance.activateAndFetchAsync();
     await fillAllFlags();
   }
+
+  Future<void> trackApplicationLifecycleState() async {
+    await ConfidenceFlutterSdkPlatform.instance.trackApplicationLifecycleState();
+  }
 }

@@ -23,6 +23,10 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  Future<void> trackApplicationLifecycleState() async {
+    throw UnimplementedError('trackApplicationLifecycleState() has not been implemented.');
+  }
+
   Future<void> setup(String apiKey) {
     throw UnimplementedError('setup() has not been implemented.');
   }
