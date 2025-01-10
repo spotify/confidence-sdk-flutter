@@ -79,6 +79,19 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             confidence?.putContext(key: key, value: value)
             result("")
             break;
+        case "putAllContext":
+            guard let args = call.arguments as? Dictionary<String, Dictionary<String, Any>> else {
+                result("")
+                return
+            }
+            let context = args["context"] as! Dictionary<String, Dictionary<String, Any>>
+            let map: ConfidenceStruct = context.mapValues { wrappedValue in
+                let type = wrappedValue["type"] as! String
+                return convertValue(type, wrappedValue["value"]!)
+            }
+            confidence?.putContext(context: map)
+            result("")
+            break;
         case "track":
             guard let args = call.arguments as? Dictionary<String, Any> else {
                 return

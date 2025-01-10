@@ -45,7 +45,14 @@ class _MyAppState extends State<MyApp> {
     try {
       await dotenv.load(fileName: ".env");
       await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!);
-      await _confidenceFlutterSdkPlugin.putContext("targeting_key", "random");
+      await _confidenceFlutterSdkPlugin.putAllContext({
+        "targeting_key": "random",
+        "my_bool": false,
+        "my_int": 1,
+        "my_double": 1.1,
+        "my_map": {"key": "value"},
+        "my_list": ["value1", "value2"]
+      });
       await _confidenceFlutterSdkPlugin.fetchAndActivate();
       object =
       (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();

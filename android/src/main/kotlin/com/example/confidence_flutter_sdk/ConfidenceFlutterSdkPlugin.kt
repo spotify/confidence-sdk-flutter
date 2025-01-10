@@ -5,9 +5,6 @@ import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceValue
 import com.spotify.confidence.FlagResolution
-import com.spotify.confidence.cache.DiskStorage
-import com.spotify.confidence.client.ConfidenceValueMap
-import com.spotify.confidence.client.ResolveFlags
 import com.spotify.confidence.client.SdkMetadata
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -109,6 +106,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val key = call.argument<String>("key")!!
         val value = call.argument<Map<String, Any>>("value")!!.convert()
         confidence.putContext(key, value)
+        result.success(null)
+      }
+      "putAllContext" -> {
+        val wrappedContext = call.argument<Map<String, Map<String, Any>>>("context")!!
+        val context: Map<String, ConfidenceValue> = wrappedContext.mapValues { (_, value) -> value.convert() }
+        confidence.putContext(context)
         result.success(null)
       }
       "track" -> {
