@@ -43,6 +43,10 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
     throw UnimplementedError('putContext() has not been implemented.');
   }
 
+  Future<void> putAllContext(Map<String, dynamic> context) async {
+    throw UnimplementedError('putAllContext() has not been implemented.');
+  }
+
   Future<bool> isStorageEmpty() {
     throw UnimplementedError('isStorageEmpty() has not been implemented.');
   }

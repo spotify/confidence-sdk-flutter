@@ -36,6 +36,18 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   }
 
   @override
+  Future<void> putAllContext(Map<String, dynamic> context) async {
+    final wrappedContext = context.map((key, value) {
+      return MapEntry(key, toTypedValue(value));
+    });
+    await methodChannel
+        .invokeMethod<void>(
+        'putAllContext',
+        {'context': wrappedContext}
+    );
+  }
+
+  @override
   void track(String eventName, Map<String, dynamic> data) {
     final wrappedData = data.map((key, value) {
       return MapEntry(key, toTypedValue(value));

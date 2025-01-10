@@ -16,6 +16,13 @@ class ConfidenceFlutterSdk {
     }
   }
 
+  Future<void> putAllContext(Map<String, dynamic> context) async {
+    await ConfidenceFlutterSdkPlatform.instance.putAllContext(context);
+    if(isInitialized) {
+      await fetchAndActivate();
+    }
+  }
+
   void track(String eventName, Map<String, dynamic> data) {
     ConfidenceFlutterSdkPlatform.instance.track(eventName, data);
   }
