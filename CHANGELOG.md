@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.0.7](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.6...0.0.7) (2025-01-13)
+
+
+### 🐛 Bug Fixes
+
+* **doc:** add readme text for putContext and putAllContext ([#28](https://github.com/spotify/confidence-sdk-flutter/issues/28)) ([cec61c4](https://github.com/spotify/confidence-sdk-flutter/commit/cec61c4a396e6c15a3494c0166735ebd5f13ae4f))
+
+
+### ✨ New Features
+
+* add putAllContext method ([#26](https://github.com/spotify/confidence-sdk-flutter/issues/26)) ([7540810](https://github.com/spotify/confidence-sdk-flutter/commit/7540810ee5bfeb5284544e6f3313f87eccd52393))
+
+
+### 🧹 Chore
+
+
+
+### 📚 Documentation
+
+
 ## [0.0.6](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.5...0.0.6) (2024-09-30)
 
 
