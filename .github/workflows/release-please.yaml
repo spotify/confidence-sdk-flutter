@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLUTTER_CHANNEL: stable
-      FLUTTER_VERSION: 3.22.2
+      FLUTTER_VERSION: 3.27.3
     if: ${{ needs.release-please.outputs.release_created }}
     steps:
       - uses: actions/checkout@v4
