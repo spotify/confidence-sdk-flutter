@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.0.9](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.8...0.0.9) (2025-01-24)
+
+
+### ✨ New Features
+
+* add support for logging ([#31](https://github.com/spotify/confidence-sdk-flutter/issues/31)) ([461abba](https://github.com/spotify/confidence-sdk-flutter/commit/461abba0f69ce6df9cd7342673da335fe340999c))
+
+
+### 📚 Documentation
+
+* clean up changelog for future releases ([#32](https://github.com/spotify/confidence-sdk-flutter/issues/32)) ([6a9794d](https://github.com/spotify/confidence-sdk-flutter/commit/6a9794dfc4886efe0e63e49b3ee78d5c491953fa))
+
 ## [0.0.8](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.7...0.0.8) (2025-01-24)
 
 
@@ -40,4 +52,3 @@
 
 * Add running example app in xcode in readme ([#20](https://github.com/spotify/confidence-sdk-flutter/issues/20)) ([4d0142b](https://github.com/spotify/confidence-sdk-flutter/commit/4d0142b45e58a1f5bb5ae9771a1a40615916ab66))
 * minor corrections ([#18](https://github.com/spotify/confidence-sdk-flutter/issues/18)) ([e02c6d7](https://github.com/spotify/confidence-sdk-flutter/commit/e02c6d720d7c5bf6ece0bfcf39b7f5965aa7acde))
-
