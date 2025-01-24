@@ -41,7 +41,6 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             let apiKey = args["apiKey"] as! String
             let logLevel = args["loggingLevel"] as! String
             self.confidence = Confidence.Builder(clientSecret: apiKey, loggerLevel: loggerLevel(from: logLevel))
-                .setLogLevel(logLevel)
                 .build()
             result("")
             break;
@@ -178,7 +177,7 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
         }
     }
 
-    func loggerLevel(from string: String) -> LoggerLevel? {
+    func loggerLevel(from string: String) -> LoggerLevel {
         switch string.uppercased() {
         case "VERBOSE":
             return .TRACE
