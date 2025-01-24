@@ -34,8 +34,13 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             result(str)
             break;
         case "setup":
-            let apiKey = call.arguments as! String
-            self.confidence = Confidence.Builder(clientSecret: apiKey)
+            guard let args = call.arguments as? Dictionary<String, Any> else {
+                result("")
+                return
+            }
+            let apiKey = args["apiKey"] as! String
+            let logLevel = args["loggingLevel"] as! String
+            self.confidence = Confidence.Builder(clientSecret: apiKey, loggerLevel: loggerLevel(from: logLevel))
                 .build()
             result("")
             break;
@@ -63,7 +68,9 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                     return
                 }
                 try! confidence.activate()
-                confidence.asyncFetch()
+                Task {
+                    await confidence.asyncFetch()
+                }
                 result("")
             }
             break;
@@ -167,6 +174,21 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             break;
         default:
             result(FlutterMethodNotImplemented)
+        }
+    }
+
+    func loggerLevel(from string: String) -> LoggerLevel {
+        switch string.uppercased() {
+        case "VERBOSE":
+            return .TRACE
+        case "DEBUG":
+            return .DEBUG
+        case "WARN":
+            return .WARN
+        case "ERROR":
+            return .ERROR
+        default:
+            return .WARN
         }
     }
 }
