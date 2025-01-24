@@ -51,7 +51,7 @@ android {
 
     dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-        implementation("com.spotify.confidence:confidence-sdk-android:0.3.2")
+        implementation("com.spotify.confidence:confidence-sdk-android:0.3.6")
         implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.0") // force this to 1.9.0
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.1.0")

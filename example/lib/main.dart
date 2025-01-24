@@ -44,7 +44,7 @@ class _MyAppState extends State<MyApp> {
     // We also handle the message potentially returning null.
     try {
       await dotenv.load(fileName: ".env");
-      await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!);
+      await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!, LoggingLevel.VERBOSE);
       await _confidenceFlutterSdkPlugin.putAllContext({
         "targeting_key": "random",
         "my_bool": false,

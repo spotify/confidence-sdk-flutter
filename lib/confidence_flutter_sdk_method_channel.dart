@@ -1,3 +1,4 @@
+import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert';
@@ -11,8 +12,8 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
   final methodChannel = const MethodChannel('confidence_flutter_sdk');
 
   @override
-  Future<void> setup(String apiKey) async {
-    return await methodChannel.invokeMethod<void>('setup', apiKey);
+  Future<void> setup(String apiKey, LoggingLevel loggingLevel) async {
+    return await methodChannel.invokeMethod<void>('setup', {'apiKey': apiKey, 'loggingLevel': loggingLevel.name});
   }
 
   @override
