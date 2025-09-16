@@ -57,8 +57,13 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                     result("")
                     return
                 }
-                try! await confidence.fetchAndActivate()
+                do {
+                    try await confidence.fetchAndActivate()
+                } catch {
+                    NSLog("%@", "Confidence SDK: \(error)")
+                }
                 result("")
+                return
             }
             break;
         case "activateAndFetchAsync":
@@ -67,9 +72,13 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                     result("")
                     return
                 }
-                try! confidence.activate()
+                do {
+                    try confidence.activate()
+                } catch {
+                    NSLog("%@", "Confidence SDK: \(error)")
+                }
                 Task {
-                    await confidence.asyncFetch()
+                    confidence.asyncFetch()
                 }
                 result("")
             }
