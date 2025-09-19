@@ -54,7 +54,11 @@ jobs:
       - name: Remove the submodule
         working-directory: ios/Classes
         run: rm -rf confidence-sdk && git rm -r --cached .
-
+      
+      - name: Prepare pub for dry-run
+        working-directory: ios/Classes
+        run: git add ConfidenceFlutterSdkPlugin.swift
+      
       - name: Setup Pub Credentials
         shell: bash
         env:
