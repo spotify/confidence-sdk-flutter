@@ -64,5 +64,5 @@ then we can run flutter on iOS given your iOS simulator is running using:
 flutter run
 ```
 
-or simply run the app from xcode.
+or simply run the app from XCode.
 
