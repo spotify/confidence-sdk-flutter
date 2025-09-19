@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/spotify/confidence-sdk-flutter/compare/v0.1.0...v0.1.1) (2025-09-19)
+
+
+### Bug Fixes
+
+* fix version ([#38](https://github.com/spotify/confidence-sdk-flutter/issues/38)) ([92d70f5](https://github.com/spotify/confidence-sdk-flutter/commit/92d70f51f736261ff12b6a3fe6a70a04ba3317e6))
+
 ## [0.1.0](https://github.com/spotify/confidence-sdk-flutter/compare/0.0.8...v0.1.0) (2025-09-17)
 
 
