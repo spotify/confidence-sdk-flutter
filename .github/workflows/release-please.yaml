@@ -13,7 +13,6 @@ jobs:
       - uses: googleapis/release-please-action@v4
         id: release
         with:
-          release-type: simple
           command: manifest
           default-branch: main
 

@@ -2,15 +2,12 @@
     "bootstrap-sha": "dc5df53f309d42398b9ee069da72ac0b74a21ab4",
     "packages": {
         ".": {
-            "release-type": "simple",
+            "release-type": "dart",
             "bump-minor-pre-major": true,
             "bump-patch-for-minor-pre-major": true,
             "versioning": "default",
             "include-v-in-tag": false,
-            "commit-search-depth": 1000,
-            "extra-files": [
-                "pubspec.yaml"
-            ]
+            "commit-search-depth": 1000
         }
     },
     "changelog-sections": [
