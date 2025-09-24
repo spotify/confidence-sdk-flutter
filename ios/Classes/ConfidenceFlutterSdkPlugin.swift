@@ -78,7 +78,7 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                     NSLog("%@", "Confidence SDK: \(error)")
                 }
                 Task {
-                    confidence.asyncFetch()
+                    await confidence.asyncFetch()
                 }
                 result("")
             }
