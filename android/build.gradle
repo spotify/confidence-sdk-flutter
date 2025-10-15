@@ -2,14 +2,14 @@ group = "com.example.confidence_flutter_sdk"
 version = "1.0-SNAPSHOT"
 
 buildscript {
-    ext.kotlin_version = "1.9.0"
+    ext.kotlin_version = "2.1.0"
     repositories {
         google()
         mavenCentral()
     }
 
     dependencies {
-        classpath("com.android.tools.build:gradle:7.3.1")
+        classpath("com.android.tools.build:gradle:8.7.3")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version")
     }
 }
@@ -46,14 +46,13 @@ android {
     }
 
     defaultConfig {
-        minSdk = 21
         consumerProguardFiles "proguard-rules.pro"
     }
 
     dependencies {
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-        implementation("com.spotify.confidence:confidence-sdk-android:0.3.6")
-        implementation("org.jetbrains.kotlin:kotlin-reflect:1.9.0") // force this to 1.9.0
+        implementation("com.spotify.confidence:confidence-sdk-android:0.6.2")
+        implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.0")
         testImplementation("org.jetbrains.kotlin:kotlin-test")
         testImplementation("org.mockito:mockito-core:5.1.0")
     }
