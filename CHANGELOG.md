@@ -4,6 +4,17 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.0](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.1.4...confidence_flutter_sdk-0.2.0) (2025-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump android sdk ([#53](https://github.com/spotify/confidence-sdk-flutter/issues/53))
+
+### 🐛 Bug Fixes
+
+* bump android sdk ([#53](https://github.com/spotify/confidence-sdk-flutter/issues/53)) ([3d059ee](https://github.com/spotify/confidence-sdk-flutter/commit/3d059eede76ae1a0778b6ee15a4f51af90b182ac))
+
 ## [0.1.4](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.1.3...confidence_flutter_sdk-0.1.4) (2025-09-24)
 
 
