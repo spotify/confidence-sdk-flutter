@@ -4,6 +4,13 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.1](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.0...confidence_flutter_sdk-0.2.1) (2026-01-23)
+
+
+### 🐛 Bug Fixes
+
+* upgrade to java 17 ([#55](https://github.com/spotify/confidence-sdk-flutter/issues/55)) ([dbec856](https://github.com/spotify/confidence-sdk-flutter/commit/dbec8564cc86090b9e80892cbf103df4d8ecc452))
+
 ## [0.2.0](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.1.4...confidence_flutter_sdk-0.2.0) (2025-10-15)
 
 
