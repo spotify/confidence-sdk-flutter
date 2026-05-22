@@ -18,7 +18,7 @@ void main() {
       if(count == 0) {
         final textWidget = element.widget as Text;
         final string = textWidget.data?.trim() ?? "";
-        expect(string, "1337");
+        expect(["Goodbye", "Welcome"].contains(string), true);
       }
       if(count == 1) {
         final textWidget = element.widget as Text;

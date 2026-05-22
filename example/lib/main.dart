@@ -57,7 +57,7 @@ class _MyAppState extends State<MyApp> {
       object =
       (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
       message =
-          (_confidenceFlutterSdkPlugin.getString("ludwigs-new-test-flag.struct-key.string-key", "0"));
+          (_confidenceFlutterSdkPlugin.getString("hawkflag.message", ""));
       final data = {
         'screen': 'home',
         "my_bool": false,
