@@ -4,6 +4,18 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.2](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.1...confidence_flutter_sdk-0.2.2) (2026-05-22)
+
+
+### ✨ New Features
+
+* drop ludwigs-new-test-flag, use hawkflag.message ([#60](https://github.com/spotify/confidence-sdk-flutter/issues/60)) ([907f5d2](https://github.com/spotify/confidence-sdk-flutter/commit/907f5d2815e3cab4c38821e160e3d551418d7a01))
+
+
+### 📚 Documentation
+
+* add contribution guidelines ([#57](https://github.com/spotify/confidence-sdk-flutter/issues/57)) ([cea6c10](https://github.com/spotify/confidence-sdk-flutter/commit/cea6c107c6fc986128529601030b108d0c7f4e71))
+
 ## [0.2.1](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.0...confidence_flutter_sdk-0.2.1) (2026-01-23)
 
 
