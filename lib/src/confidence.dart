@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'apply_client.dart';
+import 'apply_manager.dart';
 import 'confidence_value.dart';
 import 'evaluation.dart';
+import 'events_client.dart';
 import 'flag_resolution.dart';
 import 'resolve_client.dart';
 import 'storage.dart';
@@ -30,12 +34,20 @@ class Confidence {
   // -- Flag lifecycle --
 
   Future<void> fetchAndActivate() async {
-    final resolution = await _state.resolveClient.resolve(getContext());
-    await _state.storage.write(
-      'confidence.flags.resolve',
-      jsonEncode(resolution.toJson()),
-    );
-    _state.currentResolution = resolution;
+    final contextSnapshot = getContext();
+    await _state.asyncGate.run(() async {
+      final resolution =
+          await _state.resolveClient.resolve(contextSnapshot);
+
+      // Stale response check: if context changed during the fetch, discard
+      if (!_contextEquals(contextSnapshot, getContext())) return;
+
+      await _state.storage.write(
+        'confidence.flags.resolve',
+        jsonEncode(resolution.toJson()),
+      );
+      _state.currentResolution = resolution;
+    });
   }
 
   Future<void> activate() async {
@@ -47,7 +59,12 @@ class Confidence {
   }
 
   Future<void> asyncFetch() async {
-    final resolution = await _state.resolveClient.resolve(getContext());
+    final contextSnapshot = getContext();
+    final resolution =
+        await _state.resolveClient.resolve(contextSnapshot);
+
+    if (!_contextEquals(contextSnapshot, getContext())) return;
+
     await _state.storage.write(
       'confidence.flags.resolve',
       jsonEncode(resolution.toJson()),
@@ -56,7 +73,6 @@ class Confidence {
 
   Future<void> activateAndFetchAsync() async {
     await activate();
-    // Fire-and-forget background fetch
     asyncFetch().ignore();
   }
 
@@ -72,10 +88,28 @@ class Confidence {
         value: defaultValue,
         reason: ResolveReason.error,
         errorCode: 'NOT_READY',
-        errorMessage: 'No flag resolution available. Call fetchAndActivate() or activate() first.',
+        errorMessage:
+            'No flag resolution available. Call fetchAndActivate() or activate() first.',
       );
     }
-    return resolution.evaluate<T>(flagPath, defaultValue);
+
+    final eval = resolution.evaluate<T>(flagPath, defaultValue);
+
+    // Auto-apply: fire-and-forget when evaluation succeeds
+    if (eval.reason == ResolveReason.match) {
+      final flagName = flagPath.split('.')[0];
+      final flag = resolution.flags.firstWhere(
+        (f) => f.flag == flagName,
+        orElse: () => throw StateError('unreachable'),
+      );
+      if (flag.shouldApply && _state.applyManager != null) {
+        _state.applyManager!
+            .apply(flagName, resolution.resolveToken)
+            .ignore();
+      }
+    }
+
+    return eval;
   }
 
   // -- Context management --
@@ -115,8 +149,36 @@ class Confidence {
     );
   }
 
+  // -- Events --
+
+  void track(String eventName,
+      [Map<String, ConfidenceValue> data = const {}]) {
+    _state.eventsClient?.send(
+      eventName: eventName,
+      payload: data,
+      context: getContext(),
+    );
+  }
+
+  void flush() {
+    // Best-effort: currently events are sent immediately, no buffering.
+  }
+
+  // -- Internal --
+
   void _triggerRefetch() {
     fetchAndActivate().ignore();
+  }
+
+  bool _contextEquals(
+    Map<String, ConfidenceValue> a,
+    Map<String, ConfidenceValue> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (b[entry.key] != entry.value) return false;
+    }
+    return true;
   }
 }
 
@@ -160,9 +222,28 @@ class ConfidenceBuilder {
       region: _region,
     );
 
+    final applyClient = ApplyClient(
+      httpClient: httpClient,
+      clientSecret: _clientSecret,
+      region: _region,
+    );
+
+    final applyManager = ApplyManager(
+      storage: storage,
+      applyClient: applyClient,
+    );
+
+    final eventsClient = EventsClient(
+      httpClient: httpClient,
+      clientSecret: _clientSecret,
+      region: _region,
+    );
+
     final state = _ConfidenceState(
       storage: storage,
       resolveClient: resolveClient,
+      applyManager: applyManager,
+      eventsClient: eventsClient,
     );
 
     return Confidence._(
@@ -175,10 +256,33 @@ class ConfidenceBuilder {
 class _ConfidenceState {
   final Storage storage;
   final ResolveClient resolveClient;
+  final ApplyManager? applyManager;
+  final EventsClient? eventsClient;
+  final _AsyncGate asyncGate = _AsyncGate();
   FlagResolution? currentResolution;
 
   _ConfidenceState({
     required this.storage,
     required this.resolveClient,
+    this.applyManager,
+    this.eventsClient,
   });
+}
+
+class _AsyncGate {
+  Completer<void>? _pending;
+
+  Future<void> run(Future<void> Function() operation) async {
+    while (_pending != null) {
+      await _pending!.future;
+    }
+    _pending = Completer<void>();
+    try {
+      await operation();
+    } finally {
+      final p = _pending!;
+      _pending = null;
+      p.complete();
+    }
+  }
 }
