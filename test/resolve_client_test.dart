@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:confidence_flutter_sdk/src/confidence_value.dart';
 import 'package:confidence_flutter_sdk/src/resolve_client.dart';
-import 'package:confidence_flutter_sdk/src/flag_resolution.dart';
 import 'package:confidence_flutter_sdk/src/evaluation.dart';
 
 void main() {
