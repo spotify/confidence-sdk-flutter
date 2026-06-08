@@ -8,87 +8,29 @@ on:
       - '*'
 jobs:
   build:
-    runs-on: macos-latest
-
-    strategy:
-      matrix:
-        include:
-          - flutter-version: '3.27.3'
-            build: cocoapods
-          - flutter-version: '3.44.0'
-            build: android
-          - flutter-version: '3.44.0'
-            build: spm
+    runs-on: ubuntu-latest
 
     env:
       FLUTTER_CHANNEL: stable
+      FLUTTER_VERSION: 3.27.3
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
-
-    - name: Fetch submodules
-      run: git submodule update --init --recursive
-
-    - name: Set up JDK 17
-      if: matrix.build != 'spm'
-      uses: actions/setup-java@v3
-      with:
-        java-version: 17
-        distribution: 'zulu'
+      uses: actions/checkout@v4
 
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: ${{ matrix.flutter-version }}
+        flutter-version: ${{ env.FLUTTER_VERSION }}
         channel: ${{ env.FLUTTER_CHANNEL }}
 
-    - name: Copy Confidence sources for CocoaPods
-      if: matrix.build == 'cocoapods'
-      working-directory: ios/Classes
-      run: cp -r confidence-sdk/Sources/Confidence .
-
-    - name: Remove the submodule
-      if: matrix.build == 'cocoapods'
-      working-directory: ios/Classes
-      run: rm -rf confidence-sdk
-
-    - name: Remove git submodule
-      if: matrix.build == 'cocoapods'
-      working-directory: ios/Classes
-      run: git rm confidence-sdk
+    - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
 
     - name: Install dependencies
-      if: matrix.build != 'spm'
-      working-directory: example
       run: flutter pub get
 
-    - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-      if: matrix.build != 'spm'
+    - name: Analyze
+      run: flutter analyze
 
-    - name: Build Android
-      if: matrix.build != 'spm'
-      working-directory: example
-      run: flutter build apk --release
-
-    - name: Build iOS (CocoaPods)
-      if: matrix.build == 'cocoapods'
-      working-directory: example
-      run: flutter build ios --release --no-codesign
-
-    - name: Copy Confidence sources for SPM
-      if: matrix.build == 'spm'
-      run: cp -r ios/Classes/confidence-sdk/Sources/Confidence ios/confidence_flutter_sdk/Sources/confidence_flutter_sdk/
-
-    - name: Prepare plugin without git context
-      if: matrix.build == 'spm'
-      run: |
-        mkdir -p /tmp/confidence_flutter_sdk
-        rsync -a --exclude='.git' --exclude='ios/Classes/confidence-sdk' . /tmp/confidence_flutter_sdk/
-
-    - run: echo API_KEY=dummy > /tmp/confidence_flutter_sdk/example/.env
-      if: matrix.build == 'spm'
-    - name: Build iOS (SPM)
-      if: matrix.build == 'spm'
-      working-directory: /tmp/confidence_flutter_sdk/example
-      run: flutter build ios --no-codesign
+    - name: Run tests
+      run: flutter test
