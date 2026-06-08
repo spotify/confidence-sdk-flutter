@@ -370,9 +370,9 @@ void main() {
         jsonEncode(storedResolution),
       );
 
-      var fetchCount = 0;
-      final mockClient = MockClient((_) async {
-        fetchCount++;
+      var resolveCount = 0;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('resolve')) resolveCount++;
         return http.Response(jsonEncode(makeResolveResponse()), 200);
       });
 
@@ -389,9 +389,11 @@ void main() {
         equals('cached'),
       );
 
-      // Background fetch should have started
+      // Background fetch should have started — pump the event loop
       await Future.delayed(Duration.zero);
-      expect(fetchCount, equals(1));
+      await Future.delayed(Duration.zero);
+      await Future.delayed(Duration.zero);
+      expect(resolveCount, equals(1));
     });
   });
 
