@@ -19,21 +19,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: fetch submodules
-        run: git submodule update --init --recursive
-
-      - name: Copy iOS
-        working-directory: ios/Classes
-        run: cp -r confidence-sdk/Sources/Confidence .
-
-      - name: Remove the submodule
-        working-directory: ios/Classes
-        run: rm -rf confidence-sdk
-
-      - name: Remove git submodule
-        working-directory: ios/Classes
-        run: git rm confidence-sdk
-
       - name: Select iOS simulator
         id: simulator
         run: |
