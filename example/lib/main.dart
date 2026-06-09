@@ -1,112 +1,119 @@
+import 'dart:async';
+
 import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  MyApp({super.key});
+  final Completer<void> _initCompleter = Completer<void>();
+
+  Future<void> initDone() async {
+    return _initCompleter.future;
+  }
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  // ignore: no_logic_in_create_state
+  State<MyApp> createState() => _MyAppState(_initCompleter);
 }
 
 class _MyAppState extends State<MyApp> {
-  String _status = 'Initializing...';
-  String _flagValue = '';
-  String _variant = '';
-  String _reason = '';
-  String _context = '';
+  String _object = 'Unknown';
+  String _message = 'Unknown';
+  late final Confidence _confidence;
+  final Completer<void> initCompleter;
+
+  _MyAppState(this.initCompleter);
 
   @override
   void initState() {
     super.initState();
-    _initConfidence();
+    initPlatformState();
   }
 
-  Future<void> _initConfidence() async {
+  Future<void> initPlatformState() async {
+    String message;
+    String object;
     try {
       await dotenv.load(fileName: ".env");
-      final apiKey = dotenv.env["API_KEY"]!;
-
-      final confidence = Confidence.builder(clientSecret: apiKey)
+      _confidence = Confidence.builder(clientSecret: dotenv.env["API_KEY"]!)
           .region(ConfidenceRegion.eu)
           .storage(MemoryStorage())
           .initialContext({
-            'targeting_key': ConfidenceValue.string('flutter-dart-sdk-test'),
+            'targeting_key': ConfidenceValue.string('random'),
+            'my_bool': ConfidenceValue.boolean(false),
+            'my_int': ConfidenceValue.integer(1),
+            'my_double': ConfidenceValue.double_(1.1),
+            'my_map': ConfidenceValue.structure({
+              'key': ConfidenceValue.string('value'),
+            }),
+            'my_list': ConfidenceValue.list([
+              ConfidenceValue.string('value1'),
+              ConfidenceValue.string('value2'),
+            ]),
           })
           .build();
 
-      setState(() => _status = 'Fetching flags...');
-
-      await confidence.fetchAndActivate();
-
-      final eval = confidence.getFlag<String>('hawkflag.message', 'no value');
-
-      confidence.track('example_app_loaded', {
-        'sdk': ConfidenceValue.string('dart'),
+      await _confidence.fetchAndActivate();
+      object = _confidence.getValue<String>('hawkflag.message', '');
+      message = _confidence.getValue<String>('hawkflag.message', '');
+      final data = {
         'screen': ConfidenceValue.string('home'),
-      });
-
-      final ctx = confidence.getContext();
-      final ctxDisplay = ctx.entries
-          .map((e) => '  ${e.key}: ${e.value.toPlainJson()}')
-          .join('\n');
-
-      setState(() {
-        _status = 'Ready';
-        _flagValue = eval.value;
-        _variant = eval.variant ?? 'none';
-        _reason = eval.reason.name;
-        _context = ctxDisplay;
-      });
+        'my_bool': ConfidenceValue.boolean(false),
+        'my_int': ConfidenceValue.integer(1),
+        'my_double': ConfidenceValue.double_(1.1),
+        'my_map': ConfidenceValue.structure({
+          'key': ConfidenceValue.string('value'),
+        }),
+        'my_list': ConfidenceValue.list([
+          ConfidenceValue.string('value1'),
+          ConfidenceValue.string('value2'),
+        ]),
+      };
+      _confidence.track('navigate', data);
+      _confidence.flush();
     } catch (e) {
-      setState(() => _status = 'Error: $e');
+      message = 'Failed: $e';
+      object = 'Failed: $e';
     }
+
+    if (!mounted) return;
+
+    setState(() {
+      _message = message;
+      _object = object;
+    });
+    initCompleter.complete();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Confidence Dart SDK Example')),
-        body: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _row('Status', _status),
-              const Divider(),
-              _row('hawkflag.message', _flagValue),
-              _row('Variant', _variant),
-              _row('Reason', _reason),
-              const Divider(),
-              const Text('Context:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              Text(_context, style: const TextStyle(fontFamily: 'monospace')),
-            ],
+        appBar: AppBar(
+          title: const Text('Plugin example app'),
+        ),
+        body: Center(
+          child: ListView.builder(
+            itemCount: 2,
+            itemBuilder: (context, index) {
+              var title = "";
+              switch (index) {
+                case 0:
+                  title = _message;
+                case 1:
+                  title = _object;
+              }
+              return ListTile(
+                title: Text('$title\n'),
+              );
+            },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text('$label:',
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-          Expanded(child: Text(value)),
-        ],
       ),
     );
   }
