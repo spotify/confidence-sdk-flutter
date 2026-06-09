@@ -1,114 +1,112 @@
-import 'dart:async';
-
 import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({super.key});
-  final Completer<void> _initCompleter = Completer<void>();
-
-  Future<void> initDone() async {
-    return _initCompleter.future;
-  }
+  const MyApp({super.key});
 
   @override
-  // ignore: no_logic_in_create_state
-  State<MyApp> createState() => _MyAppState(_initCompleter);
+  State<MyApp> createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
-  String _object = 'Unknown';
-  String _message = 'Unknown';
-  final _confidenceFlutterSdkPlugin = ConfidenceFlutterSdk();
-  final Completer<void> initCompleter;
-
-  _MyAppState(this.initCompleter);
+  String _status = 'Initializing...';
+  String _flagValue = '';
+  String _variant = '';
+  String _reason = '';
+  String _context = '';
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    _initConfidence();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String message;
-    String object;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
+  Future<void> _initConfidence() async {
     try {
       await dotenv.load(fileName: ".env");
-      await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!, LoggingLevel.VERBOSE);
-      await _confidenceFlutterSdkPlugin.putAllContext({
-        "targeting_key": "random",
-        "my_bool": false,
-        "my_int": 1,
-        "my_double": 1.1,
-        "my_map": {"key": "value"},
-        "my_list": ["value1", "value2"]
+      final apiKey = dotenv.env["API_KEY"]!;
+
+      final confidence = Confidence.builder(clientSecret: apiKey)
+          .region(ConfidenceRegion.eu)
+          .storage(MemoryStorage())
+          .initialContext({
+            'targeting_key': ConfidenceValue.string('flutter-dart-sdk-test'),
+          })
+          .build();
+
+      setState(() => _status = 'Fetching flags...');
+
+      await confidence.fetchAndActivate();
+
+      final eval = confidence.getFlag<String>('hawkflag.message', 'no value');
+
+      confidence.track('example_app_loaded', {
+        'sdk': ConfidenceValue.string('dart'),
+        'screen': ConfidenceValue.string('home'),
       });
-      await _confidenceFlutterSdkPlugin.fetchAndActivate();
-      object =
-      (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
-      message =
-          (_confidenceFlutterSdkPlugin.getString("hawkflag.message", ""));
-      final data = {
-        'screen': 'home',
-        "my_bool": false,
-        "my_int": 1,
-        "my_double": 1.1,
-        "my_map": {"key": "value"},
-        "my_list": ["value1", "value2"]
-      };
-      _confidenceFlutterSdkPlugin.track("navigate", data);
-      _confidenceFlutterSdkPlugin.flush();
-    } on PlatformException {
-      message = 'Failed to get platform version.';
-      object = 'Failed to get object.';
+
+      final ctx = confidence.getContext();
+      final ctxDisplay = ctx.entries
+          .map((e) => '  ${e.key}: ${e.value.toPlainJson()}')
+          .join('\n');
+
+      setState(() {
+        _status = 'Ready';
+        _flagValue = eval.value;
+        _variant = eval.variant ?? 'none';
+        _reason = eval.reason.name;
+        _context = ctxDisplay;
+      });
+    } catch (e) {
+      setState(() => _status = 'Error: $e');
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _message = message;
-      _object = object;
-    });
-    initCompleter.complete();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: ListView.builder(
-            itemCount: 2,
-            itemBuilder: (context, index) {
-              var title = "";
-              switch (index) {
-                case 0:
-                  title = _message;
-                case 1:
-                  title = _object;
-              }
-              return ListTile(
-                title: Text('$title\n'),
-              );
-            },
+        appBar: AppBar(title: const Text('Confidence Dart SDK Example')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _row('Status', _status),
+              const Divider(),
+              _row('hawkflag.message', _flagValue),
+              _row('Variant', _variant),
+              _row('Reason', _reason),
+              const Divider(),
+              const Text('Context:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(_context, style: const TextStyle(fontFamily: 'monospace')),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _row(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text('$label:',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }
