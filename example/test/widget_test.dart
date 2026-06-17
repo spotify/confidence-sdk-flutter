@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:confidence_flutter_sdk_example/main.dart';
 import 'package:integration_test/integration_test.dart';
@@ -11,23 +11,16 @@ void main() {
     await tester.pumpWidget(myApp);
     await myApp.initDone();
     // expect a list item with text evaluation exist
-    await tester.pump();
-    final textWidgets = find.byType(Text);
-    int count = 0;
-    textWidgets.evaluate().forEach((element) {
-      if(count == 0) {
-        final textWidget = element.widget as Text;
-        final string = textWidget.data?.trim() ?? "";
-        expect(["Goodbye", "Welcome"].contains(string), true);
-      }
-      if(count == 1) {
-        final textWidget = element.widget as Text;
-        final string = textWidget.data?.trim() ?? "";
-        expect(string.contains("enabled"), true);
-        expect(string.contains("message"), true);
-        expect(string.contains("color"), true);
-      }
-      count++;
-    });
+    await tester.pumpAndSettle();
+    final listTiles = find.byType(ListTile);
+    expect(listTiles, findsNWidgets(2));
+
+    final messageText = (find.descendant(of: listTiles.at(0), matching: find.byType(Text)).evaluate().first.widget as Text).data?.trim() ?? "";
+    expect(["Goodbye", "Welcome"].contains(messageText), true);
+
+    final objectText = (find.descendant(of: listTiles.at(1), matching: find.byType(Text)).evaluate().first.widget as Text).data?.trim() ?? "";
+    expect(objectText.contains("enabled"), true);
+    expect(objectText.contains("message"), true);
+    expect(objectText.contains("color"), true);
 });
 }
