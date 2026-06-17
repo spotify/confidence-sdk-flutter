@@ -11,7 +11,7 @@ void main() {
     await tester.pumpWidget(myApp);
     await myApp.initDone();
     // expect a list item with text evaluation exist
-    await tester.pump();
+    await tester.pumpAndSettle();
     final listTiles = find.byType(ListTile);
     expect(listTiles, findsNWidgets(2));
 
