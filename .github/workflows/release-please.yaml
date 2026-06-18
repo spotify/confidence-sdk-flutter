@@ -10,11 +10,8 @@ jobs:
 
     # Release-please creates a PR that tracks all changes
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
-        with:
-          command: manifest
-          default-branch: main
 
       - name: Dump Release Please Output
         env:
@@ -24,6 +21,7 @@ jobs:
 
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
 
   flutter-release:
     needs: release-please
@@ -31,11 +29,11 @@ jobs:
     env:
       FLUTTER_CHANNEL: stable
       FLUTTER_VERSION: 3.27.3
-    if: ${{ needs.release-please.outputs.release_created }}
+    if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          ref: ${{ needs.release-please.outputs.release_tag_name }}
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: fetch submodules
         run: git submodule update --init --recursive
@@ -46,17 +44,19 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
 
-      - name: Copy iOS
+      - name: Copy Confidence sources for CocoaPods
         working-directory: ios/Classes
         run: cp -r confidence-sdk/Sources/Confidence .
+
+      - name: Copy Confidence sources for SPM
+        run: cp -r ios/Classes/confidence-sdk/Sources/Confidence ios/confidence_flutter_sdk/Sources/confidence_flutter_sdk/
 
       - name: Remove the submodule
         working-directory: ios/Classes
         run: rm -rf confidence-sdk && git rm -r --cached .
-      
-      - name: Prepare pub for dry-run
-        working-directory: ios/Classes
-        run: git add ConfidenceFlutterSdkPlugin.swift
+
+      - name: Stage copied sources for pub
+        run: git add ios/Classes/Confidence ios/confidence_flutter_sdk/Sources/confidence_flutter_sdk/Confidence
       
       - name: Setup Pub Credentials
         shell: bash
