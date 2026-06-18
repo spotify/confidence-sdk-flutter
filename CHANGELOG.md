@@ -4,6 +4,13 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.3](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.2...confidence_flutter_sdk-0.2.3) (2026-06-18)
+
+
+### 🐛 Bug Fixes
+
+* update release workflow for SPM directory layout ([#65](https://github.com/spotify/confidence-sdk-flutter/issues/65)) ([237529d](https://github.com/spotify/confidence-sdk-flutter/commit/237529d80bf0a809e0e8a5b1cb61480341dae3ed))
+
 ## [0.2.2](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.1...confidence_flutter_sdk-0.2.2) (2026-06-18)
 
 
