@@ -100,9 +100,11 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         result.success(Json.encodeToString(NetworkConfidenceValueSerializer, value))
       }
       "readAllFlags" -> {
-        val flags = readAllFlags()
-        val map = flags.flags.associateBy({ it.flag }, { ConfidenceValue.Struct(it.value) })
-        result.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+        coroutineScope.launch {
+          val flags = readAllFlags()
+          val map = flags.flags.associateBy({ it.flag }, { ConfidenceValue.Struct(it.value) })
+          result.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+        }
       }
       "putContext" -> {
         val key = call.argument<String>("key")!!
