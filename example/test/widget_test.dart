@@ -17,7 +17,7 @@ String _listTileText(Finder listTiles, int index) {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('App initializes and resolves flags', (WidgetTester tester) async {
+  testWidgets('Verify flag resolution', (WidgetTester tester) async {
     MyApp myApp = MyApp();
     await tester.pumpWidget(myApp);
     await myApp.initDone();
@@ -28,12 +28,12 @@ void main() {
       final listTiles = find.byType(ListTile);
       if (listTiles.evaluate().length == 2) {
         messageText = _listTileText(listTiles, 0);
-        if (messageText.isNotEmpty && messageText != 'Unknown') break;
+        if (["Goodbye", "Welcome"].contains(messageText)) break;
       }
       await Future.delayed(const Duration(milliseconds: 200));
     }
 
-    expect(messageText.isNotEmpty, isTrue,
-        reason: 'Expected a resolved flag value but got "$messageText"');
+    expect(["Goodbye", "Welcome"].contains(messageText), isTrue,
+        reason: 'Expected "Goodbye" or "Welcome" but got "$messageText"');
   });
 }
