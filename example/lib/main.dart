@@ -44,7 +44,7 @@ class _MyAppState extends State<MyApp> {
           .region(ConfidenceRegion.eu)
           .storage(MemoryStorage())
           .initialContext({
-            'targeting_key': ConfidenceValue.string('random'),
+            'visitor_id': ConfidenceValue.string('random'),
             'my_bool': ConfidenceValue.boolean(false),
             'my_int': ConfidenceValue.integer(1),
             'my_double': ConfidenceValue.double_(1.1),
