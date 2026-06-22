@@ -55,9 +55,6 @@ jobs:
         working-directory: ios/Classes
         run: rm -rf confidence-sdk && git rm -r --cached .
 
-      - name: Stage copied sources for pub
-        run: git add ios/Classes/Confidence ios/confidence_flutter_sdk/Sources/confidence_flutter_sdk/Confidence
-      
       - name: Setup Pub Credentials
         shell: bash
         env:
