@@ -4,6 +4,13 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.4](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.3...confidence_flutter_sdk-0.2.4) (2026-06-22)
+
+
+### 🐛 Bug Fixes
+
+* drop git-add step that caused pub dry-run to fail ([#67](https://github.com/spotify/confidence-sdk-flutter/issues/67)) ([3256b62](https://github.com/spotify/confidence-sdk-flutter/commit/3256b622d06abcc65073e713088c86314a937d28))
+
 ## [0.2.3](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.2...confidence_flutter_sdk-0.2.3) (2026-06-18)
 
 
