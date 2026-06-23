@@ -17,7 +17,7 @@ String _listTileText(Finder listTiles, int index) {
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-  testWidgets('Verify flag resolution', (WidgetTester tester) async {
+  testWidgets('Verify Platform version', (WidgetTester tester) async {
     MyApp myApp = MyApp();
     await tester.pumpWidget(myApp);
     await myApp.initDone();
@@ -35,5 +35,14 @@ void main() {
 
     expect(["Goodbye", "Welcome"].contains(messageText), isTrue,
         reason: 'Expected "Goodbye" or "Welcome" but got "$messageText"');
+
+    final listTiles = find.byType(ListTile);
+    final objectText = _listTileText(listTiles, 1);
+    expect(objectText.contains("enabled"), isTrue,
+        reason: 'Expected "enabled" in "$objectText"');
+    expect(objectText.contains("message"), isTrue,
+        reason: 'Expected "message" in "$objectText"');
+    expect(objectText.contains("color"), isTrue,
+        reason: 'Expected "color" in "$objectText"');
   });
 }

@@ -78,6 +78,10 @@ class Confidence {
 
   // -- Flag evaluation --
 
+  FlagResolution? get currentResolution => _state.currentResolution;
+
+  bool isStorageEmpty() => _state.currentResolution == null;
+
   T getValue<T>(String flagPath, T defaultValue) =>
       getFlag<T>(flagPath, defaultValue).value;
 

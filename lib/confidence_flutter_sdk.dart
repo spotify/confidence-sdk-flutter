@@ -1,4 +1,5 @@
 export 'src/confidence.dart' show Confidence, ConfidenceBuilder;
+export 'src/flag_resolution.dart' show FlagResolution, ResolvedFlag;
 export 'src/confidence_value.dart';
 export 'src/evaluation.dart';
 export 'src/resolve_client.dart' show ConfidenceRegion;
