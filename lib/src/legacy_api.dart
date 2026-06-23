@@ -1,5 +1,8 @@
+import 'package:uuid/uuid.dart';
+
 import 'confidence.dart';
 import 'confidence_value.dart';
+import 'evaluation.dart';
 import 'resolve_client.dart';
 import 'storage.dart';
 
@@ -28,6 +31,8 @@ enum LoggingLevel {
 class ConfidenceFlutterSdk {
   Confidence? _confidence;
   String? _apiKey;
+  Map<String, dynamic>? _pendingContext;
+  final String _visitorId = const Uuid().v4();
 
   Future<void> setup(String apiKey,
       [LoggingLevel loggingLevel = LoggingLevel.WARN]) async {
@@ -35,7 +40,13 @@ class ConfidenceFlutterSdk {
   }
 
   Future<void> putContext(String key, dynamic value) async {
-    _confidence?.putContextLocal(key, _toConfidenceValue(value));
+    final c = _confidence;
+    if (c != null) {
+      c.putContextLocal(key, _toConfidenceValue(value));
+    } else {
+      _pendingContext ??= {};
+      _pendingContext![key] = value;
+    }
   }
 
   Future<void> putAllContext(Map<String, dynamic> context) async {
@@ -45,11 +56,10 @@ class ConfidenceFlutterSdk {
         c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
       }
     } else {
-      _pendingContext = context;
+      _pendingContext ??= {};
+      _pendingContext!.addAll(context);
     }
   }
-
-  Map<String, dynamic>? _pendingContext;
 
   Future<void> fetchAndActivate() async {
     _confidence ??= _buildConfidence();
@@ -65,7 +75,14 @@ class ConfidenceFlutterSdk {
 
   Future<void> activateAndFetchAsync() async {
     _confidence ??= _buildConfidence();
-    await _confidence!.activateAndFetchAsync();
+    final c = _confidence!;
+    if (_pendingContext != null) {
+      for (final entry in _pendingContext!.entries) {
+        c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
+      }
+      _pendingContext = null;
+    }
+    await c.activateAndFetchAsync();
   }
 
   String getString(String key, String defaultValue) =>
@@ -81,24 +98,38 @@ class ConfidenceFlutterSdk {
       _confidence?.getValue<double>(key, defaultValue) ?? defaultValue;
 
   Map<String, dynamic> getObject(
-      String key, Map<String, dynamic> defaultValue) =>
-      defaultValue;
+      String key, Map<String, dynamic> defaultValue) {
+    final c = _confidence;
+    if (c == null) return defaultValue;
+    final eval = c.getFlag<String>(key, '');
+    if (eval.reason == ResolveReason.error) return defaultValue;
+    final resolution = c.currentResolution;
+    if (resolution == null) return defaultValue;
+    final flagName = key.split('.')[0];
+    final flag = resolution.flags.where((f) => f.flag == flagName).firstOrNull;
+    if (flag?.value == null) return defaultValue;
+    return flag!.value!.toPlainJson() as Map<String, dynamic>;
+  }
 
   void track(String eventName, Map<String, dynamic> data) {
-    _confidence?.track(eventName,
-        data.map((k, v) => MapEntry(k, _toConfidenceValue(v))));
+    _confidence?.track(
+        eventName, data.map((k, v) => MapEntry(k, _toConfidenceValue(v))));
   }
 
   void flush() {
     _confidence?.flush();
   }
 
-  Future<bool> isStorageEmpty() async => true;
+  Future<bool> isStorageEmpty() async =>
+      _confidence?.isStorageEmpty() ?? true;
 
   Confidence _buildConfidence() {
     return Confidence.builder(clientSecret: _apiKey ?? '')
         .region(ConfidenceRegion.eu)
         .storage(MemoryStorage())
+        .initialContext({
+          'visitor_id': ConfidenceValue.string(_visitorId),
+        })
         .build();
   }
 

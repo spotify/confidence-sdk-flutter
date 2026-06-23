@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:confidence_flutter_sdk/confidence_flutter_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() {
@@ -24,7 +25,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _object = 'Unknown';
   String _message = 'Unknown';
-  late final Confidence _confidence;
+  final _confidenceFlutterSdkPlugin = ConfidenceFlutterSdk();
   final Completer<void> initCompleter;
 
   _MyAppState(this.initCompleter);
@@ -35,52 +36,46 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
+  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String message;
     String object;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    // We also handle the message potentially returning null.
     try {
       await dotenv.load(fileName: ".env");
-      _confidence = Confidence.builder(clientSecret: dotenv.env["API_KEY"]!)
-          .region(ConfidenceRegion.eu)
-          .storage(MemoryStorage())
-          .initialContext({
-            'visitor_id': ConfidenceValue.string('random'),
-            'my_bool': ConfidenceValue.boolean(false),
-            'my_int': ConfidenceValue.integer(1),
-            'my_double': ConfidenceValue.double_(1.1),
-            'my_map': ConfidenceValue.structure({
-              'key': ConfidenceValue.string('value'),
-            }),
-            'my_list': ConfidenceValue.list([
-              ConfidenceValue.string('value1'),
-              ConfidenceValue.string('value2'),
-            ]),
-          })
-          .build();
-
-      await _confidence.fetchAndActivate();
-      object = _confidence.getValue<String>('hawkflag.message', '');
-      message = _confidence.getValue<String>('hawkflag.message', '');
+      await _confidenceFlutterSdkPlugin.setup(dotenv.env["API_KEY"]!, LoggingLevel.VERBOSE);
+      await _confidenceFlutterSdkPlugin.putAllContext({
+        "targeting_key": "random",
+        "my_bool": false,
+        "my_int": 1,
+        "my_double": 1.1,
+        "my_map": {"key": "value"},
+        "my_list": ["value1", "value2"]
+      });
+      await _confidenceFlutterSdkPlugin.fetchAndActivate();
+      object =
+      (_confidenceFlutterSdkPlugin.getObject("hawkflag", <String, dynamic>{})).toString();
+      message =
+          (_confidenceFlutterSdkPlugin.getString("hawkflag.message", ""));
       final data = {
-        'screen': ConfidenceValue.string('home'),
-        'my_bool': ConfidenceValue.boolean(false),
-        'my_int': ConfidenceValue.integer(1),
-        'my_double': ConfidenceValue.double_(1.1),
-        'my_map': ConfidenceValue.structure({
-          'key': ConfidenceValue.string('value'),
-        }),
-        'my_list': ConfidenceValue.list([
-          ConfidenceValue.string('value1'),
-          ConfidenceValue.string('value2'),
-        ]),
+        'screen': 'home',
+        "my_bool": false,
+        "my_int": 1,
+        "my_double": 1.1,
+        "my_map": {"key": "value"},
+        "my_list": ["value1", "value2"]
       };
-      _confidence.track('navigate', data);
-      _confidence.flush();
-    } catch (e) {
-      message = 'Failed: $e';
-      object = 'Failed: $e';
+      _confidenceFlutterSdkPlugin.track("navigate", data);
+      _confidenceFlutterSdkPlugin.flush();
+    } on PlatformException {
+      message = 'Failed to get platform version.';
+      object = 'Failed to get object.';
     }
 
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
