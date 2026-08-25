@@ -22,6 +22,14 @@ final confidence = ConfidenceFlutterSdk();
 await confidence.setup("API_KEY");
 ```
 
+To use a self-hosted local resolver SDK or sidecar resolver for flag resolve and apply requests, pass a custom resolve base URL:
+
+```dart
+await confidence.setup("API_KEY", LoggingLevel.WARN, "http://localhost:8090");
+```
+
+The native SDKs append `/v1/flags:resolve` and `/v1/flags:apply` to this URL. Event tracking continues to use the Confidence events endpoint.
+
 Context could be passed to the sdk as follows:
 ```dart
 await confidence.putContext(key, value)
@@ -65,4 +73,3 @@ flutter run
 ```
 
 or simply run the app from XCode.
-

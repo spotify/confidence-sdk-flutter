@@ -44,11 +44,22 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
       "setup" -> {
         val apiKey = call.argument<String>("apiKey")!!
         val loggingLevel = call.argument<String>("loggingLevel")!!
-        confidence = ConfidenceFactory.create(
-          context,
-          apiKey,
-          loggingLevel = LoggingLevel.valueOf(loggingLevel)
-        )
+        val resolveBaseUrl = call.argument<String>("resolveBaseUrl")
+        val resolvedLoggingLevel = LoggingLevel.valueOf(loggingLevel)
+        confidence = if (resolveBaseUrl.isNullOrBlank()) {
+          ConfidenceFactory.create(
+            context,
+            apiKey,
+            loggingLevel = resolvedLoggingLevel
+          )
+        } else {
+          ConfidenceFactory.create(
+            context,
+            apiKey,
+            resolveBaseUrl = resolveBaseUrl,
+            loggingLevel = resolvedLoggingLevel
+          )
+        }
         result.success(null)
       }
       "fetchAndActivate" -> {

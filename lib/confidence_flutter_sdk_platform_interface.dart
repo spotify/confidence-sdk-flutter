@@ -24,7 +24,11 @@ abstract class ConfidenceFlutterSdkPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<void> setup(String apiKey, LoggingLevel loggingLevel) {
+  Future<void> setup(
+    String apiKey,
+    LoggingLevel loggingLevel, [
+    String? resolveBaseUrl,
+  ]) {
     throw UnimplementedError('setup() has not been implemented.');
   }
 
