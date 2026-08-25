@@ -1,10 +1,7 @@
-import 'package:uuid/uuid.dart';
-
 import 'confidence.dart';
 import 'confidence_value.dart';
-import 'evaluation.dart';
+import 'flutter/confidence_flutter.dart';
 import 'resolve_client.dart';
-import 'storage.dart';
 
 extension ConfidenceLegacyApi on Confidence {
   bool getBool(String key, bool defaultValue) =>
@@ -13,8 +10,7 @@ extension ConfidenceLegacyApi on Confidence {
   String getString(String key, String defaultValue) =>
       getValue<String>(key, defaultValue);
 
-  int getInt(String key, int defaultValue) =>
-      getValue<int>(key, defaultValue);
+  int getInt(String key, int defaultValue) => getValue<int>(key, defaultValue);
 
   double getDouble(String key, double defaultValue) =>
       getValue<double>(key, defaultValue);
@@ -28,21 +24,34 @@ enum LoggingLevel {
   NONE,
 }
 
+typedef ConfidenceFactory = Future<Confidence> Function(
+  String clientSecret, {
+  String? resolveBaseUrl,
+});
+
 class ConfidenceFlutterSdk {
   Confidence? _confidence;
   String? _apiKey;
+  String? _resolveBaseUrl;
   Map<String, dynamic>? _pendingContext;
-  final String _visitorId = const Uuid().v4();
+  final ConfidenceFactory _confidenceFactory;
+
+  ConfidenceFlutterSdk({
+    ConfidenceFactory? confidenceFactory,
+  }) : _confidenceFactory = confidenceFactory ?? _defaultConfidenceFactory;
 
   Future<void> setup(String apiKey,
-      [LoggingLevel loggingLevel = LoggingLevel.WARN]) async {
+      [LoggingLevel loggingLevel = LoggingLevel.WARN,
+      String? resolveBaseUrl]) async {
     _apiKey = apiKey;
+    _resolveBaseUrl = resolveBaseUrl;
   }
 
   Future<void> putContext(String key, dynamic value) async {
     final c = _confidence;
     if (c != null) {
       c.putContextLocal(key, _toConfidenceValue(value));
+      await c.fetchAndActivate();
     } else {
       _pendingContext ??= {};
       _pendingContext![key] = value;
@@ -55,6 +64,7 @@ class ConfidenceFlutterSdk {
       for (final entry in context.entries) {
         c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
       }
+      await c.fetchAndActivate();
     } else {
       _pendingContext ??= {};
       _pendingContext!.addAll(context);
@@ -62,26 +72,12 @@ class ConfidenceFlutterSdk {
   }
 
   Future<void> fetchAndActivate() async {
-    _confidence ??= _buildConfidence();
-    final c = _confidence!;
-    if (_pendingContext != null) {
-      for (final entry in _pendingContext!.entries) {
-        c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
-      }
-      _pendingContext = null;
-    }
+    final c = await _ensureConfidence();
     await c.fetchAndActivate();
   }
 
   Future<void> activateAndFetchAsync() async {
-    _confidence ??= _buildConfidence();
-    final c = _confidence!;
-    if (_pendingContext != null) {
-      for (final entry in _pendingContext!.entries) {
-        c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
-      }
-      _pendingContext = null;
-    }
+    final c = await _ensureConfidence();
     await c.activateAndFetchAsync();
   }
 
@@ -101,14 +97,19 @@ class ConfidenceFlutterSdk {
       String key, Map<String, dynamic> defaultValue) {
     final c = _confidence;
     if (c == null) return defaultValue;
-    final eval = c.getFlag<String>(key, '');
-    if (eval.reason == ResolveReason.error) return defaultValue;
     final resolution = c.currentResolution;
     if (resolution == null) return defaultValue;
-    final flagName = key.split('.')[0];
+
+    final parts = key.split('.');
+    final flagName = parts[0];
     final flag = resolution.flags.where((f) => f.flag == flagName).firstOrNull;
-    if (flag?.value == null) return defaultValue;
-    return flag!.value!.toPlainJson() as Map<String, dynamic>;
+    ConfidenceValue? value = flag?.value;
+    for (final property in parts.skip(1)) {
+      if (value is! ConfidenceValueStructure) return defaultValue;
+      value = value.value[property];
+    }
+    if (value is! ConfidenceValueStructure) return defaultValue;
+    return value.toPlainJson() as Map<String, dynamic>;
   }
 
   void track(String eventName, Map<String, dynamic> data) {
@@ -120,17 +121,40 @@ class ConfidenceFlutterSdk {
     _confidence?.flush();
   }
 
-  Future<bool> isStorageEmpty() async =>
-      _confidence?.isStorageEmpty() ?? true;
+  Future<bool> isStorageEmpty() async => _confidence?.isStorageEmpty() ?? true;
 
-  Confidence _buildConfidence() {
-    return Confidence.builder(clientSecret: _apiKey ?? '')
-        .region(ConfidenceRegion.eu)
-        .storage(MemoryStorage())
-        .initialContext({
-          'visitor_id': ConfidenceValue.string(_visitorId),
-        })
-        .build();
+  Future<Confidence> _ensureConfidence() async {
+    final existing = _confidence;
+    if (existing != null) return existing;
+
+    final created = await _confidenceFactory(
+      _apiKey ?? '',
+      resolveBaseUrl: _resolveBaseUrl,
+    );
+    _confidence = created;
+    _applyPendingContext(created);
+    return created;
+  }
+
+  void _applyPendingContext(Confidence confidence) {
+    final pendingContext = _pendingContext;
+    if (pendingContext == null) return;
+
+    for (final entry in pendingContext.entries) {
+      confidence.putContextLocal(entry.key, _toConfidenceValue(entry.value));
+    }
+    _pendingContext = null;
+  }
+
+  static Future<Confidence> _defaultConfidenceFactory(
+    String clientSecret, {
+    String? resolveBaseUrl,
+  }) async {
+    return ConfidenceFlutter.create(
+      clientSecret: clientSecret,
+      region: ConfidenceRegion.eu,
+      resolveBaseUrl: resolveBaseUrl,
+    );
   }
 
   static ConfidenceValue _toConfidenceValue(dynamic value) {

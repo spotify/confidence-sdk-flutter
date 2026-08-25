@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -13,34 +14,35 @@ Map<String, dynamic> makeResolveResponse({
   String resolveToken = 'token-abc',
 }) {
   return {
-    'resolvedFlags': flags ?? [
-      {
-        'flag': 'flags/my-flag',
-        'variant': 'flags/my-flag/variants/treatment',
-        'value': {
-          'color': 'red',
-          'size': 42,
-          'enabled': true,
-          'nested': {'deep': 'value'},
-        },
-        'flagSchema': {
-          'schema': {
-            'color': {'stringSchema': {}},
-            'size': {'intSchema': {}},
-            'enabled': {'boolSchema': {}},
-            'nested': {
-              'structSchema': {
-                'schema': {
-                  'deep': {'stringSchema': {}},
+    'resolvedFlags': flags ??
+        [
+          {
+            'flag': 'flags/my-flag',
+            'variant': 'flags/my-flag/variants/treatment',
+            'value': {
+              'color': 'red',
+              'size': 42,
+              'enabled': true,
+              'nested': {'deep': 'value'},
+            },
+            'flagSchema': {
+              'schema': {
+                'color': {'stringSchema': {}},
+                'size': {'intSchema': {}},
+                'enabled': {'boolSchema': {}},
+                'nested': {
+                  'structSchema': {
+                    'schema': {
+                      'deep': {'stringSchema': {}},
+                    },
+                  },
                 },
               },
             },
+            'reason': 'RESOLVE_REASON_MATCH',
+            'shouldApply': true,
           },
-        },
-        'reason': 'RESOLVE_REASON_MATCH',
-        'shouldApply': true,
-      },
-    ],
+        ],
     'resolveToken': resolveToken,
   };
 }
@@ -62,6 +64,37 @@ void main() {
       expect(
         confidence.getValue<String>('my-flag.color', 'default'),
         equals('red'),
+      );
+    });
+
+    test('uses custom resolve base URL for resolve and apply', () async {
+      final capturedUrls = <String>[];
+      final applySent = Completer<void>();
+      final mockClient = MockClient((request) async {
+        capturedUrls.add(request.url.toString());
+        if (request.url.path.endsWith('/v1/flags:apply')) {
+          applySent.complete();
+          return http.Response('{}', 200);
+        }
+        return http.Response(jsonEncode(makeResolveResponse()), 200);
+      });
+
+      final confidence = Confidence.builder(clientSecret: 'test-secret')
+          .httpClient(mockClient)
+          .storage(MemoryStorage())
+          .resolveBaseUrl('http://localhost:8090/')
+          .build();
+
+      await confidence.fetchAndActivate();
+      confidence.getValue<String>('my-flag.color', 'default');
+      await applySent.future.timeout(const Duration(seconds: 1));
+
+      expect(
+        capturedUrls,
+        containsAllInOrder([
+          'http://localhost:8090/v1/flags:resolve',
+          'http://localhost:8090/v1/flags:apply',
+        ]),
       );
     });
 
@@ -223,9 +256,8 @@ void main() {
           .httpClient(mockClient)
           .storage(MemoryStorage())
           .initialContext({
-            'targeting_key': ConfidenceValue.string('user-123'),
-          })
-          .build();
+        'targeting_key': ConfidenceValue.string('user-123'),
+      }).build();
 
       final context = confidence.getContext();
       expect(context['targeting_key'], isA<ConfidenceValueString>());
@@ -246,10 +278,9 @@ void main() {
           .httpClient(mockClient)
           .storage(MemoryStorage())
           .initialContext({
-            'targeting_key': ConfidenceValue.string('user-123'),
-            'country': ConfidenceValue.string('SE'),
-          })
-          .build();
+        'targeting_key': ConfidenceValue.string('user-123'),
+        'country': ConfidenceValue.string('SE'),
+      }).build();
 
       await confidence.fetchAndActivate();
 
@@ -271,9 +302,8 @@ void main() {
           .httpClient(mockClient)
           .storage(MemoryStorage())
           .initialContext({
-            'targeting_key': ConfidenceValue.string('user-123'),
-          })
-          .build();
+        'targeting_key': ConfidenceValue.string('user-123'),
+      }).build();
 
       final child = parent.withContext({
         'page': ConfidenceValue.string('home'),
@@ -293,9 +323,8 @@ void main() {
           .httpClient(mockClient)
           .storage(MemoryStorage())
           .initialContext({
-            'color': ConfidenceValue.string('red'),
-          })
-          .build();
+        'color': ConfidenceValue.string('red'),
+      }).build();
 
       final child = parent.withContext({
         'color': ConfidenceValue.string('blue'),
@@ -351,7 +380,8 @@ void main() {
       );
     });
 
-    test('activateAndFetchAsync activates cache then fetches in background', () async {
+    test('activateAndFetchAsync activates cache then fetches in background',
+        () async {
       final storage = MemoryStorage();
       final storedResolution = {
         'resolvedFlags': [
@@ -428,6 +458,62 @@ void main() {
       // either discarded or a new fetch should have been triggered.
       // The exact behavior depends on implementation details.
       expect(resolveCallCount, greaterThanOrEqualTo(1));
+    });
+  });
+
+  group('Confidence apply recovery', () {
+    test('retries pending applies on evaluation', () async {
+      final storage = MemoryStorage();
+      await storage.write(
+        'confidence.apply.cache',
+        jsonEncode({
+          'old-token': ['old-flag'],
+        }),
+      );
+
+      final capturedRequests = <http.Request>[];
+      final mockClient = MockClient((request) async {
+        capturedRequests.add(request);
+        if (request.url.path.contains('flags:resolve')) {
+          return http.Response(jsonEncode(makeResolveResponse()), 200);
+        }
+        return http.Response('{}', 200);
+      });
+
+      final confidence = Confidence.builder(clientSecret: 'test-secret')
+          .httpClient(mockClient)
+          .storage(storage)
+          .build();
+
+      await confidence.fetchAndActivate();
+      confidence.getValue<String>('my-flag.color', 'default');
+
+      for (var i = 0; i < 10; i++) {
+        final applyRequests = capturedRequests
+            .where((request) => request.url.path.contains('flags:apply'))
+            .toList();
+        if (applyRequests.length == 2) break;
+        await Future.delayed(Duration.zero);
+      }
+
+      final applyBodies = capturedRequests
+          .where((request) => request.url.path.contains('flags:apply'))
+          .map((request) => jsonDecode(request.body) as Map<String, dynamic>)
+          .toList();
+
+      expect(applyBodies, hasLength(2));
+      expect(applyBodies[0]['resolveToken'], equals('old-token'));
+      expect(
+        ((applyBodies[0]['flags'] as List).single
+            as Map<String, dynamic>)['flag'],
+        equals('flags/old-flag'),
+      );
+      expect(applyBodies[1]['resolveToken'], equals('token-abc'));
+      expect(
+        ((applyBodies[1]['flags'] as List).single
+            as Map<String, dynamic>)['flag'],
+        equals('flags/my-flag'),
+      );
     });
   });
 }

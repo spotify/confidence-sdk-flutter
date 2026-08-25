@@ -16,21 +16,22 @@ void main() {
       String resolveToken = 'token-abc',
     }) {
       return {
-        'resolvedFlags': flags ?? [
-          {
-            'flag': 'flags/my-flag',
-            'variant': 'flags/my-flag/variants/treatment',
-            'value': {'color': 'red', 'size': 42},
-            'flagSchema': {
-              'schema': {
-                'color': {'stringSchema': {}},
-                'size': {'intSchema': {}},
+        'resolvedFlags': flags ??
+            [
+              {
+                'flag': 'flags/my-flag',
+                'variant': 'flags/my-flag/variants/treatment',
+                'value': {'color': 'red', 'size': 42},
+                'flagSchema': {
+                  'schema': {
+                    'color': {'stringSchema': {}},
+                    'size': {'intSchema': {}},
+                  },
+                },
+                'reason': 'RESOLVE_REASON_MATCH',
+                'shouldApply': true,
               },
-            },
-            'reason': 'RESOLVE_REASON_MATCH',
-            'shouldApply': true,
-          },
-        ],
+            ],
         'resolveToken': resolveToken,
       };
     }
@@ -165,6 +166,30 @@ void main() {
       );
     });
 
+    test('uses custom resolve base URL', () async {
+      late Uri capturedUrl;
+      final mockClient = MockClient((request) async {
+        capturedUrl = request.url;
+        return http.Response(
+          jsonEncode(makeResolveResponse()),
+          200,
+        );
+      });
+
+      final client = ResolveClient(
+        httpClient: mockClient,
+        clientSecret: clientSecret,
+        region: ConfidenceRegion.global,
+        resolveBaseUrl: 'http://localhost:8090/',
+      );
+
+      await client.resolve({});
+      expect(
+        capturedUrl.toString(),
+        equals('http://localhost:8090/v1/flags:resolve'),
+      );
+    });
+
     test('throws on HTTP 500 error', () async {
       final mockClient = MockClient((_) async {
         return http.Response('Internal Server Error', 500);
@@ -208,7 +233,11 @@ void main() {
                 'flag': 'flags/flag-a',
                 'variant': 'flags/flag-a/variants/v1',
                 'value': {'key': 'value-a'},
-                'flagSchema': {'schema': {'key': {'stringSchema': {}}}},
+                'flagSchema': {
+                  'schema': {
+                    'key': {'stringSchema': {}}
+                  }
+                },
                 'reason': 'RESOLVE_REASON_MATCH',
                 'shouldApply': true,
               },
@@ -216,7 +245,11 @@ void main() {
                 'flag': 'flags/flag-b',
                 'variant': 'flags/flag-b/variants/v2',
                 'value': {'key': 'value-b'},
-                'flagSchema': {'schema': {'key': {'stringSchema': {}}}},
+                'flagSchema': {
+                  'schema': {
+                    'key': {'stringSchema': {}}
+                  }
+                },
                 'reason': 'RESOLVE_REASON_NO_SEGMENT_MATCH',
                 'shouldApply': false,
               },
@@ -296,8 +329,7 @@ void main() {
         'age': ConfidenceValue.integer(30),
       });
 
-      final context =
-          capturedBody['evaluationContext'] as Map<String, dynamic>;
+      final context = capturedBody['evaluationContext'] as Map<String, dynamic>;
       expect(context['targeting_key'], equals('user-abc'));
       expect(context['country'], equals('SE'));
       expect(context['age'], equals(30));

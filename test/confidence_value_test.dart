@@ -64,9 +64,8 @@ void main() {
         }),
       });
       expect(value, isA<ConfidenceValueStructure>());
-      final outer =
-          (value as ConfidenceValueStructure).value['outer']
-              as ConfidenceValueStructure;
+      final outer = (value as ConfidenceValueStructure).value['outer']
+          as ConfidenceValueStructure;
       final inner = outer.value['inner'] as ConfidenceValueStructure;
       final deep = inner.value['deep'] as ConfidenceValueString;
       expect(deep.value, equals('found'));
@@ -169,7 +168,8 @@ void main() {
 
   group('ConfidenceValue equality', () {
     test('same boolean values are equal', () {
-      expect(ConfidenceValue.boolean(true), equals(ConfidenceValue.boolean(true)));
+      expect(
+          ConfidenceValue.boolean(true), equals(ConfidenceValue.boolean(true)));
     });
 
     test('different boolean values are not equal', () {
@@ -188,6 +188,20 @@ void main() {
 
     test('null values are equal', () {
       expect(ConfidenceValue.null_(), equals(ConfidenceValue.null_()));
+    });
+
+    test('equal structures have equal hash codes regardless of key order', () {
+      final left = ConfidenceValue.structure({
+        'first': ConfidenceValue.string('a'),
+        'second': ConfidenceValue.integer(2),
+      });
+      final right = ConfidenceValue.structure({
+        'second': ConfidenceValue.integer(2),
+        'first': ConfidenceValue.string('a'),
+      });
+
+      expect(left, equals(right));
+      expect(left.hashCode, equals(right.hashCode));
     });
   });
 
@@ -231,7 +245,8 @@ void main() {
       );
       expect(ConfidenceValue.fromPlainJson(42), isA<ConfidenceValueInteger>());
       expect(ConfidenceValue.fromPlainJson(3.14), isA<ConfidenceValueDouble>());
-      expect(ConfidenceValue.fromPlainJson(true), isA<ConfidenceValueBoolean>());
+      expect(
+          ConfidenceValue.fromPlainJson(true), isA<ConfidenceValueBoolean>());
       expect(ConfidenceValue.fromPlainJson(null), isA<ConfidenceValueNull>());
     });
 

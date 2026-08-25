@@ -36,8 +36,7 @@ class Confidence {
   Future<void> fetchAndActivate() async {
     final contextSnapshot = getContext();
     await _state.asyncGate.run(() async {
-      final resolution =
-          await _state.resolveClient.resolve(contextSnapshot);
+      final resolution = await _state.resolveClient.resolve(contextSnapshot);
 
       // Stale response check: if context changed during the fetch, discard
       if (!_contextEquals(contextSnapshot, getContext())) return;
@@ -60,8 +59,7 @@ class Confidence {
 
   Future<void> asyncFetch() async {
     final contextSnapshot = getContext();
-    final resolution =
-        await _state.resolveClient.resolve(contextSnapshot);
+    final resolution = await _state.resolveClient.resolve(contextSnapshot);
 
     if (!_contextEquals(contextSnapshot, getContext())) return;
 
@@ -107,9 +105,7 @@ class Confidence {
         orElse: () => throw StateError('unreachable'),
       );
       if (flag.shouldApply && _state.applyManager != null) {
-        _state.applyManager!
-            .apply(flagName, resolution.resolveToken)
-            .ignore();
+        _state.applyManager!.apply(flagName, resolution.resolveToken).ignore();
       }
     }
 
@@ -155,8 +151,7 @@ class Confidence {
 
   // -- Events --
 
-  void track(String eventName,
-      [Map<String, ConfidenceValue> data = const {}]) {
+  void track(String eventName, [Map<String, ConfidenceValue> data = const {}]) {
     _state.eventsClient?.send(
       eventName: eventName,
       payload: data,
@@ -192,6 +187,7 @@ class ConfidenceBuilder {
   Storage? _storage;
   http.Client? _httpClient;
   Map<String, ConfidenceValue> _initialContext = {};
+  String? _resolveBaseUrl;
 
   ConfidenceBuilder._({required String clientSecret})
       : _clientSecret = clientSecret;
@@ -211,6 +207,11 @@ class ConfidenceBuilder {
     return this;
   }
 
+  ConfidenceBuilder resolveBaseUrl(String resolveBaseUrl) {
+    _resolveBaseUrl = resolveBaseUrl;
+    return this;
+  }
+
   ConfidenceBuilder initialContext(Map<String, ConfidenceValue> context) {
     _initialContext = context;
     return this;
@@ -224,12 +225,14 @@ class ConfidenceBuilder {
       httpClient: httpClient,
       clientSecret: _clientSecret,
       region: _region,
+      resolveBaseUrl: _resolveBaseUrl,
     );
 
     final applyClient = ApplyClient(
       httpClient: httpClient,
       clientSecret: _clientSecret,
       region: _region,
+      resolveBaseUrl: _resolveBaseUrl,
     );
 
     final applyManager = ApplyManager(

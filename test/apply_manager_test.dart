@@ -39,8 +39,7 @@ void main() {
       await manager.apply('my-flag', 'token-123');
 
       expect(capturedRequests, hasLength(1));
-      final body =
-          jsonDecode(capturedRequests[0].body) as Map<String, dynamic>;
+      final body = jsonDecode(capturedRequests[0].body) as Map<String, dynamic>;
       expect(body['resolveToken'], equals('token-123'));
       final flags = body['flags'] as List;
       expect(flags, hasLength(1));
@@ -145,6 +144,35 @@ void main() {
       expect(stored, isNotNull);
     });
 
+    test('retries same flag and resolve token after failed send', () async {
+      var callCount = 0;
+      final failThenSucceed = MockClient((request) async {
+        capturedRequests.add(request);
+        callCount++;
+        if (callCount == 1) {
+          return http.Response('Server Error', 500);
+        }
+        return http.Response('{}', 200);
+      });
+
+      final applyClient = ApplyClient(
+        httpClient: failThenSucceed,
+        clientSecret: 'test-secret',
+        region: ConfidenceRegion.global,
+      );
+      final manager = ApplyManager(
+        storage: storage,
+        applyClient: applyClient,
+      );
+
+      await manager.apply('my-flag', 'token-123');
+      await manager.apply('my-flag', 'token-123');
+
+      expect(capturedRequests, hasLength(2));
+      final stored = await storage.read('confidence.apply.cache');
+      expect(jsonDecode(stored!) as Map<String, dynamic>, isEmpty);
+    });
+
     test('restores pending applies from storage on creation', () async {
       // Pre-populate storage with pending applies
       final pendingData = jsonEncode({
@@ -165,9 +193,34 @@ void main() {
       await manager.restore();
 
       expect(capturedRequests, hasLength(1));
-      final body =
-          jsonDecode(capturedRequests[0].body) as Map<String, dynamic>;
+      final body = jsonDecode(capturedRequests[0].body) as Map<String, dynamic>;
       expect(body['resolveToken'], equals('token-123'));
+    });
+
+    test('restores multiple pending flags for the same resolve token',
+        () async {
+      await storage.write(
+        'confidence.apply.cache',
+        jsonEncode({
+          'token-123': ['flag-a', 'flag-b'],
+        }),
+      );
+
+      final applyClient = ApplyClient(
+        httpClient: makeApplyClient(),
+        clientSecret: 'test-secret',
+        region: ConfidenceRegion.global,
+      );
+      final manager = ApplyManager(
+        storage: storage,
+        applyClient: applyClient,
+      );
+
+      await manager.restore();
+
+      expect(capturedRequests, hasLength(2));
+      final stored = await storage.read('confidence.apply.cache');
+      expect(jsonDecode(stored!) as Map<String, dynamic>, isEmpty);
     });
   });
 
@@ -221,6 +274,31 @@ void main() {
         equals('https://resolver.eu.confidence.dev/v1/flags:apply'),
       );
     });
+
+    test('sends to custom resolve base URL', () async {
+      late Uri capturedUrl;
+      final mockClient = MockClient((request) async {
+        capturedUrl = request.url;
+        return http.Response('{}', 200);
+      });
+
+      final client = ApplyClient(
+        httpClient: mockClient,
+        clientSecret: 'test-secret',
+        region: ConfidenceRegion.global,
+        resolveBaseUrl: 'http://localhost:8090/',
+      );
+
+      await client.sendApply(
+        flagName: 'my-flag',
+        resolveToken: 'token',
+        applyTime: DateTime.utc(2026, 6, 5, 10, 0, 0),
+      );
+
+      expect(
+        capturedUrl.toString(),
+        equals('http://localhost:8090/v1/flags:apply'),
+      );
+    });
   });
 }
-

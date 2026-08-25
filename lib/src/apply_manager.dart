@@ -7,6 +7,7 @@ class ApplyManager {
   final Storage _storage;
   final ApplyClient _applyClient;
   final Set<String> _appliedKeys = {};
+  final Set<String> _inFlightKeys = {};
 
   static const _storageKey = 'confidence.apply.cache';
 
@@ -17,10 +18,12 @@ class ApplyManager {
         _applyClient = applyClient;
 
   Future<void> apply(String flagName, String resolveToken) async {
-    final key = '$resolveToken:$flagName';
-    if (_appliedKeys.contains(key)) return;
+    final key = _appliedKey(resolveToken, flagName);
 
-    _appliedKeys.add(key);
+    await _restore(skipKey: key);
+
+    if (_appliedKeys.contains(key) || _inFlightKeys.contains(key)) return;
+    _inFlightKeys.add(key);
 
     final applyTime = DateTime.now().toUtc();
 
@@ -31,24 +34,35 @@ class ApplyManager {
         applyTime: applyTime,
       );
 
-      if (!success) {
+      if (success) {
+        _appliedKeys.add(key);
+        await _removePending(resolveToken, flagName);
+      } else {
         await _addPending(resolveToken, flagName);
       }
     } catch (_) {
       await _addPending(resolveToken, flagName);
+    } finally {
+      _inFlightKeys.remove(key);
     }
   }
 
-  Future<void> restore() async {
+  Future<void> restore() => _restore();
+
+  Future<void> _restore({String? skipKey}) async {
     final pending = await _loadPending();
     if (pending.isEmpty) return;
 
     for (final entry in pending.entries) {
       final resolveToken = entry.key;
-      for (final flagName in entry.value) {
-        final key = '$resolveToken:$flagName';
-        if (_appliedKeys.contains(key)) continue;
-        _appliedKeys.add(key);
+      for (final flagName in List<String>.of(entry.value)) {
+        final key = _appliedKey(resolveToken, flagName);
+        if (key == skipKey ||
+            _appliedKeys.contains(key) ||
+            _inFlightKeys.contains(key)) {
+          continue;
+        }
+        _inFlightKeys.add(key);
 
         try {
           final success = await _applyClient.sendApply(
@@ -57,14 +71,20 @@ class ApplyManager {
             applyTime: DateTime.now().toUtc(),
           );
           if (success) {
+            _appliedKeys.add(key);
             await _removePending(resolveToken, flagName);
           }
         } catch (_) {
           // Keep in pending for next retry
+        } finally {
+          _inFlightKeys.remove(key);
         }
       }
     }
   }
+
+  String _appliedKey(String resolveToken, String flagName) =>
+      '$resolveToken:$flagName';
 
   Future<void> _addPending(String resolveToken, String flagName) async {
     final pending = await _loadPending();

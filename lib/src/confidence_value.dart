@@ -17,18 +17,19 @@ sealed class ConfidenceValue {
   dynamic toJson();
 
   dynamic toPlainJson() => switch (this) {
-    ConfidenceValueBoolean(value: final v) => v,
-    ConfidenceValueString(value: final v) => v,
-    ConfidenceValueInteger(value: final v) => v,
-    ConfidenceValueDouble(value: final v) => v,
-    ConfidenceValueDate(value: final v) => v.toIso8601String().split('T')[0],
-    ConfidenceValueTimestamp(value: final v) => v.toUtc().toIso8601String(),
-    ConfidenceValueList(value: final v) =>
-      v.map((e) => e.toPlainJson()).toList(),
-    ConfidenceValueStructure(value: final v) =>
-      v.map((k, e) => MapEntry(k, e.toPlainJson())),
-    ConfidenceValueNull() => null,
-  };
+        ConfidenceValueBoolean(value: final v) => v,
+        ConfidenceValueString(value: final v) => v,
+        ConfidenceValueInteger(value: final v) => v,
+        ConfidenceValueDouble(value: final v) => v,
+        ConfidenceValueDate(value: final v) =>
+          v.toIso8601String().split('T')[0],
+        ConfidenceValueTimestamp(value: final v) => v.toUtc().toIso8601String(),
+        ConfidenceValueList(value: final v) =>
+          v.map((e) => e.toPlainJson()).toList(),
+        ConfidenceValueStructure(value: final v) =>
+          v.map((k, e) => MapEntry(k, e.toPlainJson())),
+        ConfidenceValueNull() => null,
+      };
 
   static ConfidenceValue fromJson(dynamic json) {
     if (json == null) return const ConfidenceValueNull();
@@ -173,7 +174,9 @@ final class ConfidenceValueStructure extends ConfidenceValue {
       );
 
   @override
-  int get hashCode => Object.hashAll(value.entries.map((e) => e.hashCode));
+  int get hashCode => Object.hashAllUnordered(
+        value.entries.map((e) => Object.hash(e.key, e.value)),
+      );
 }
 
 final class ConfidenceValueNull extends ConfidenceValue {

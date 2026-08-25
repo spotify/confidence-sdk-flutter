@@ -13,38 +13,50 @@ enum ConfidenceRegion {
   us;
 
   String get resolverBaseUrl => switch (this) {
-    ConfidenceRegion.global => 'https://resolver.confidence.dev',
-    ConfidenceRegion.eu => 'https://resolver.eu.confidence.dev',
-    ConfidenceRegion.us => 'https://resolver.us.confidence.dev',
-  };
+        ConfidenceRegion.global => 'https://resolver.confidence.dev',
+        ConfidenceRegion.eu => 'https://resolver.eu.confidence.dev',
+        ConfidenceRegion.us => 'https://resolver.us.confidence.dev',
+      };
 
   String get eventsBaseUrl => switch (this) {
-    ConfidenceRegion.global => 'https://events.confidence.dev',
-    ConfidenceRegion.eu => 'https://events.eu.confidence.dev',
-    ConfidenceRegion.us => 'https://events.us.confidence.dev',
-  };
+        ConfidenceRegion.global => 'https://events.confidence.dev',
+        ConfidenceRegion.eu => 'https://events.eu.confidence.dev',
+        ConfidenceRegion.us => 'https://events.us.confidence.dev',
+      };
 }
+
+extension ConfidenceRegionEndpoints on ConfidenceRegion {
+  String resolverEndpoint([String? resolveBaseUrl]) =>
+      _stripTrailingSlashes(resolveBaseUrl ?? resolverBaseUrl);
+}
+
+String _stripTrailingSlashes(String url) =>
+    url.replaceFirst(RegExp(r'/+$'), '');
 
 class ResolveClient {
   final http.Client _httpClient;
   final String _clientSecret;
   final ConfidenceRegion _region;
+  final String? _resolveBaseUrl;
 
   ResolveClient({
     required http.Client httpClient,
     required String clientSecret,
     required ConfidenceRegion region,
+    String? resolveBaseUrl,
   })  : _httpClient = httpClient,
         _clientSecret = clientSecret,
-        _region = region;
+        _region = region,
+        _resolveBaseUrl = resolveBaseUrl;
 
   Future<FlagResolution> resolve(
     Map<String, ConfidenceValue> context,
   ) async {
-    final url = Uri.parse('${_region.resolverBaseUrl}/v1/flags:resolve');
+    final url = Uri.parse(
+      '${_region.resolverEndpoint(_resolveBaseUrl)}/v1/flags:resolve',
+    );
 
-    final plainContext =
-        context.map((k, v) => MapEntry(k, v.toPlainJson()));
+    final plainContext = context.map((k, v) => MapEntry(k, v.toPlainJson()));
 
     final body = jsonEncode({
       'flags': <String>[],

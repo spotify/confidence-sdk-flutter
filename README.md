@@ -2,7 +2,7 @@
 
 Flutter implementation of the [Confidence](https://confidence.spotify.com/) SDK.
 
-This SDK uses the [Android](https://github.com/spotify/confidence-sdk-android) and [iOS](https://github.com/spotify/confidence-sdk-swift) respectively under the hood.
+This package provides a pure Dart Confidence SDK for Flutter apps, plus a legacy `ConfidenceFlutterSdk` wrapper for existing integrations.
 
 ## Usage
 Add the confidence sdk to your flutter app using the following command:
@@ -28,7 +28,7 @@ To use a self-hosted local resolver SDK or sidecar resolver for flag resolve and
 await confidence.setup("API_KEY", LoggingLevel.WARN, "http://localhost:8090");
 ```
 
-The native SDKs append `/v1/flags:resolve` and `/v1/flags:apply` to this URL. Event tracking continues to use the Confidence events endpoint.
+The pure Dart resolve and apply clients append `/v1/flags:resolve` and `/v1/flags:apply` to this URL. Event tracking continues to use the Confidence events endpoint.
 
 Context could be passed to the sdk as follows:
 ```dart
@@ -57,19 +57,11 @@ we can send custom events to the confidence sdk like following:
 confidence.track("[EVENT-NAME]", <String, dynamic>{});
 ```
 
-### Running the example iOS app in xcode
-to run the iOS example app in xcode, first fetch the submodules:
-
-```bash
-git submodule update --init --recursive
-```
-
-then you can drag and drop the `ios/Classes/confidence_sdk/Sources/Confidence` folder into your xcode project next to the `ConfidenceFlutterSDkPlugin.swift` file.
-
-then we can run flutter on iOS given your iOS simulator is running using:
+### Running the example iOS app in Xcode
+Run the app on iOS with a simulator already running:
 
 ```bash
 flutter run
 ```
 
-or simply run the app from XCode.
+or open the example app in Xcode and run it from there.

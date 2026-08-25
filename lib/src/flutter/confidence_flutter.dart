@@ -12,6 +12,7 @@ class ConfidenceFlutter {
     required String clientSecret,
     ConfidenceRegion region = ConfidenceRegion.global,
     Map<String, ConfidenceValue> initialContext = const {},
+    String? resolveBaseUrl,
   }) async {
     final storage = await FlutterStorage.create();
     final visitorIdManager = VisitorIdManager();
@@ -27,10 +28,15 @@ class ConfidenceFlutter {
       ...initialContext,
     };
 
-    return Confidence.builder(clientSecret: clientSecret)
+    final builder = Confidence.builder(clientSecret: clientSecret)
         .region(region)
         .storage(storage)
-        .initialContext(mergedContext)
-        .build();
+        .initialContext(mergedContext);
+
+    if (resolveBaseUrl != null) {
+      builder.resolveBaseUrl(resolveBaseUrl);
+    }
+
+    return builder.build();
   }
 }

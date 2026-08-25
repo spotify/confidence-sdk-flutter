@@ -9,21 +9,26 @@ class ApplyClient {
   final http.Client _httpClient;
   final String _clientSecret;
   final ConfidenceRegion _region;
+  final String? _resolveBaseUrl;
 
   ApplyClient({
     required http.Client httpClient,
     required String clientSecret,
     required ConfidenceRegion region,
+    String? resolveBaseUrl,
   })  : _httpClient = httpClient,
         _clientSecret = clientSecret,
-        _region = region;
+        _region = region,
+        _resolveBaseUrl = resolveBaseUrl;
 
   Future<bool> sendApply({
     required String flagName,
     required String resolveToken,
     required DateTime applyTime,
   }) async {
-    final url = Uri.parse('${_region.resolverBaseUrl}/v1/flags:apply');
+    final url = Uri.parse(
+      '${_region.resolverEndpoint(_resolveBaseUrl)}/v1/flags:apply',
+    );
     final now = DateTime.now().toUtc();
 
     final body = jsonEncode({
