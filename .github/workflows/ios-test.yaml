@@ -33,9 +33,12 @@ jobs:
         working-directory: ios/Classes
         run: git rm confidence-sdk
 
-      - uses: futureware-tech/simulator-action@v3
-        with:
-          model: 'iPhone 16'
+      - name: Select iOS simulator
+        id: simulator
+        run: |
+          SIMULATOR=$(xcrun simctl list devices available -j | python3 .github/scripts/find-simulator.py iOS)
+          echo "udid=$SIMULATOR" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIMULATOR"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -44,4 +47,7 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-      - run: cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+      - run: |
+          xcrun simctl boot "${{ steps.simulator.outputs.udid }}" || true
+          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
+          cd example && flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
