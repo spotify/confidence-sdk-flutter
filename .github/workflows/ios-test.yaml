@@ -13,7 +13,7 @@ jobs:
 
     env:
       FLUTTER_CHANNEL: stable
-      FLUTTER_VERSION: 3.27.3
+      FLUTTER_VERSION: 3.44.0
 
     steps:
       - name: Checkout code
@@ -51,5 +51,6 @@ jobs:
       - name: Run iOS integration tests
         timeout-minutes: 30
         run: |
+          flutter config --no-enable-swift-package-manager
           xcrun simctl boot "${{ steps.simulator.outputs.udid }}"
-          cd example && flutter drive -v -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+          cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
