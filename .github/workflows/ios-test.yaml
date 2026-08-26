@@ -51,4 +51,5 @@ jobs:
       - name: Run iOS integration tests
         timeout-minutes: 30
         run: |
-          cd example && flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+          xcrun simctl boot "${{ steps.simulator.outputs.udid }}"
+          cd example && flutter drive -v -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
