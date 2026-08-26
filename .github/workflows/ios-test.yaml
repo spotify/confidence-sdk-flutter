@@ -9,6 +9,7 @@ on:
 jobs:
   ios-test:
     runs-on: macos-latest
+    timeout-minutes: 45
 
     env:
       FLUTTER_CHANNEL: stable
@@ -47,7 +48,8 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-      - run: |
-          xcrun simctl boot "${{ steps.simulator.outputs.udid }}" || true
-          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
-          cd example && flutter drive -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+      - name: Run iOS integration tests
+        timeout-minutes: 30
+        run: |
+          xcrun simctl boot "${{ steps.simulator.outputs.udid }}"
+          cd example && flutter drive -v -d "${{ steps.simulator.outputs.udid }}" --driver=test_drive/integration_test.dart --target=test/widget_test.dart
