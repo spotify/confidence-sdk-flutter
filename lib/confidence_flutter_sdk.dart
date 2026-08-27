@@ -90,8 +90,13 @@ class ConfidenceFlutterSdk {
     return resolveKey(key) ?? defaultValue;
   }
 
-  Future<void> setup(String apiKey, [LoggingLevel loggingLevel = LoggingLevel.WARN]) async {
-    return await ConfidenceFlutterSdkPlatform.instance.setup(apiKey, loggingLevel);
+  Future<void> setup(
+    String apiKey, [
+    LoggingLevel loggingLevel = LoggingLevel.WARN,
+    String? resolveBaseUrl,
+  ]) async {
+    return await ConfidenceFlutterSdkPlatform.instance
+        .setup(apiKey, loggingLevel, resolveBaseUrl);
   }
 
   Future<void> fetchAndActivate() async {

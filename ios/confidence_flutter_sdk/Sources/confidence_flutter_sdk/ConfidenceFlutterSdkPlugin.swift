@@ -40,8 +40,11 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             }
             let apiKey = args["apiKey"] as! String
             let logLevel = args["loggingLevel"] as! String
-            self.confidence = Confidence.Builder(clientSecret: apiKey, loggerLevel: loggerLevel(from: logLevel))
-                .build()
+            var builder = Confidence.Builder(clientSecret: apiKey, loggerLevel: loggerLevel(from: logLevel))
+            if let resolveBaseUrl = args["resolveBaseUrl"] as? String, !resolveBaseUrl.isEmpty {
+                builder = builder.withResolveBaseUrl(resolveBaseUrl: resolveBaseUrl)
+            }
+            self.confidence = builder.build()
             result("")
             break;
         case "isStorageEmpty":
