@@ -4,6 +4,25 @@
 
 * force release ([#41](https://github.com/spotify/confidence-sdk-flutter/issues/41)) ([6334911](https://github.com/spotify/confidence-sdk-flutter/commit/6334911e207b3a34a5b450ec1bf45d7ec5eafd69))
 
+## [0.2.5](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.4...confidence_flutter_sdk-0.2.5) (2026-08-27)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** modernize iOS integration test runner ([#74](https://github.com/spotify/confidence-sdk-flutter/issues/74)) ([3925523](https://github.com/spotify/confidence-sdk-flutter/commit/39255234f7f409522c10999aea8eb70b10df2c06))
+* **ci:** prevent iOS test workflow hangs ([#72](https://github.com/spotify/confidence-sdk-flutter/issues/72)) ([1c801df](https://github.com/spotify/confidence-sdk-flutter/commit/1c801dfb7e235587bf11684a366453a1fe552286))
+* **ci:** select available iOS simulator ([b3c6df3](https://github.com/spotify/confidence-sdk-flutter/commit/b3c6df3336f02606f7d96d5fa4b6509a618ee7dd))
+
+
+### ✨ New Features
+
+* add custom resolve base URL ([#69](https://github.com/spotify/confidence-sdk-flutter/issues/69)) ([85153bc](https://github.com/spotify/confidence-sdk-flutter/commit/85153bc47081cb5325b47c057b921d5361605d2c))
+
+
+### 🧹 Chore
+
+* **ci:** update action versions ([#73](https://github.com/spotify/confidence-sdk-flutter/issues/73)) ([f64b5fb](https://github.com/spotify/confidence-sdk-flutter/commit/f64b5fb41f20f5a1c81a64b0f475829cf2b5071e))
+
 ## [0.2.4](https://github.com/spotify/confidence-sdk-flutter/compare/confidence_flutter_sdk-0.2.3...confidence_flutter_sdk-0.2.4) (2026-06-22)
 
 
