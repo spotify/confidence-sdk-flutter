@@ -64,11 +64,18 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
     if (kDebugMode) {
       print(wrappedData);
     }
+    // track() is intentionally fire-and-forget, so the returned future is not
+    // awaited. Without this handler a native error reply would surface as an
+    // unhandled async error in the host app.
     methodChannel
         .invokeMethod<void>(
         'track',
         {'eventName': eventName, 'data': wrappedData}
-    );
+    ).catchError((Object error) {
+      if (kDebugMode) {
+        print('Confidence SDK: failed to track "$eventName": $error');
+      }
+    });
   }
 
   @override

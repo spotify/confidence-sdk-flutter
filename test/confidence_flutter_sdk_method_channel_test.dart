@@ -50,4 +50,38 @@ void main() {
       'loggingLevel': 'WARN',
     });
   });
+
+  test('track forwards the event name and typed data', () async {
+    platform.track('my-event', <String, dynamic>{'plan': 'pro', 'seats': 3});
+
+    await pumpEventQueue();
+
+    expect(methodCalls, hasLength(1));
+    expect(methodCalls.single.method, 'track');
+    expect(methodCalls.single.arguments, <String, Object>{
+      'eventName': 'my-event',
+      'data': <String, Object>{
+        'plan': <String, Object>{'type': 'string', 'value': 'pro'},
+        'seats': <String, Object>{'type': 'int', 'value': 3},
+      },
+    });
+  });
+
+  test('track does not raise an unhandled async error when native fails',
+      () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(platform.methodChannel, (methodCall) async {
+      methodCalls.add(methodCall);
+      throw PlatformException(code: 'TRACK_FAILED', message: 'boom');
+    });
+
+    // track() is void, so the future is never awaited by the caller. An
+    // unguarded rejection would escape the test zone and fail this test.
+    platform.track('my-event', <String, dynamic>{});
+
+    await pumpEventQueue();
+
+    expect(methodCalls, hasLength(1));
+    expect(methodCalls.single.method, 'track');
+  });
 }

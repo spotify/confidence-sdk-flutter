@@ -133,7 +133,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val eventName = call.argument<String>("eventName")!!
         val wrappedData = call.argument<Map<String, Map<String, Any>>>("data")!!
         val data: Map<String, ConfidenceValue> = wrappedData.mapValues { (_, value) -> value.convert() }
-        confidence.track(eventName, data)
+        try {
+          confidence.track(eventName, data)
+          result.success(null)
+        } catch (e: Exception) {
+          result.error("TRACK_FAILED", "Failed to track event '$eventName': ${e.message}", null)
+        }
       }
       else -> result.notImplemented()
     }
