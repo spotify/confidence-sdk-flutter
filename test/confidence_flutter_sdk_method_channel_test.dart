@@ -67,6 +67,33 @@ void main() {
     });
   });
 
+  test('flush completes once native replies', () async {
+    // Native must reply to every flush call. Without a reply the future below
+    // never completes, so this test would time out rather than fail an
+    // assertion — which is exactly how the dangling reply went unnoticed.
+    await platform.flush().timeout(const Duration(seconds: 5));
+
+    expect(methodCalls, hasLength(1));
+    expect(methodCalls.single.method, 'flush');
+  });
+
+  test('flush does not raise an unhandled async error when native fails',
+      () async {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(platform.methodChannel, (methodCall) async {
+      methodCalls.add(methodCall);
+      throw PlatformException(code: 'FLUSH_FAILED', message: 'boom');
+    });
+
+    // The platform interface types flush() as void, so callers discard this
+    // future and an unguarded rejection would become an unhandled async error.
+    // Awaiting it here asserts the guard directly: it must complete, not throw.
+    await expectLater(platform.flush(), completes);
+
+    expect(methodCalls, hasLength(1));
+    expect(methodCalls.single.method, 'flush');
+  });
+
   test('track does not raise an unhandled async error when native fails',
       () async {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

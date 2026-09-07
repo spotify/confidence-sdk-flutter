@@ -39,7 +39,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   override fun onMethodCall(call: MethodCall, result: Result) {
     when(call.method) {
       "flush" -> {
-        confidence.flush()
+        try {
+          confidence.flush()
+          result.success(null)
+        } catch (e: Exception) {
+          result.error("FLUSH_FAILED", "Failed to flush: ${e.message}", null)
+        }
       }
       "setup" -> {
         val apiKey = call.argument<String>("apiKey")!!

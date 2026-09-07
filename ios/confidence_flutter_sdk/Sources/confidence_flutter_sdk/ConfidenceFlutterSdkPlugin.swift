@@ -18,6 +18,10 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                 return
             }
             confidence.flush()
+            // Confidence.flush() is non-throwing, so there is nothing to catch
+            // here — but the reply is still mandatory: without it the Dart
+            // future never completes.
+            result("")
             break;
         case "readAllFlags":
             guard let flags = try? readAllFlags() else {
