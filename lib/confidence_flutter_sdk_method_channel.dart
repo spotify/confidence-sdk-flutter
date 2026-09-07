@@ -160,6 +160,14 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
     return value!;
   }
 
+  /// Wraps [value] in the `{'type': ..., 'value': ...}` envelope the native
+  /// plugins decode.
+  ///
+  /// Anything Confidence has no type for — a `DateTime`, a `null`, a custom
+  /// object — is sent as `type: 'unknown'` carrying `value.toString()`. Both
+  /// native sides publish that as a string. They must not coerce it to a
+  /// number or drop it: the caller's data would be silently wrong with
+  /// nothing to indicate it.
   Map<String, dynamic> toTypedValue(dynamic value) {
     if (value is int) {
       return {'type': 'int', 'value': value};

@@ -111,4 +111,47 @@ void main() {
     expect(methodCalls, hasLength(1));
     expect(methodCalls.single.method, 'track');
   });
+
+  // Values Confidence has no type for must reach native as a stringified
+  // 'unknown', never as a number and never dropped. The native halves of this
+  // contract (iOS convertValue, Android convert) cannot be exercised from
+  // Dart, so what is pinned here is the wire format they rely on.
+  group('unsupported tracking values keep their value', () {
+    Map<String, dynamic> trackedData() {
+      final args = methodCalls.single.arguments as Map<Object?, Object?>;
+      return (args['data'] as Map<Object?, Object?>)
+          .map((k, v) => MapEntry(k as String, v));
+    }
+
+    test('a DateTime is stringified, not coerced to a number', () {
+      final now = DateTime.utc(2026, 9, 7, 12, 34, 56);
+      platform.track('my_event', {'ts': now});
+
+      final ts = trackedData()['ts'] as Map<Object?, Object?>;
+      expect(ts['type'], 'unknown');
+      expect(ts['value'], now.toString());
+      expect(ts['value'], isNot(0));
+    });
+
+    test('a null keeps a value and the key is not dropped', () {
+      platform.track('my_event', {'maybe': null});
+
+      final data = trackedData();
+      expect(data.containsKey('maybe'), isTrue,
+          reason: 'the key must survive so the caller can see what was sent');
+      final maybe = data['maybe'] as Map<Object?, Object?>;
+      expect(maybe['type'], 'unknown');
+      expect(maybe['value'], isNot(0));
+    });
+
+    test('supported types are unaffected', () {
+      platform.track('my_event', {'n': 7, 's': 'x', 'b': true, 'd': 1.5});
+
+      final data = trackedData();
+      expect((data['n'] as Map<Object?, Object?>)['type'], 'int');
+      expect((data['s'] as Map<Object?, Object?>)['type'], 'string');
+      expect((data['b'] as Map<Object?, Object?>)['type'], 'bool');
+      expect((data['d'] as Map<Object?, Object?>)['type'], 'double');
+    });
+  });
 }

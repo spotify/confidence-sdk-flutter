@@ -259,7 +259,17 @@ func convertValue(_ type: String, _ value: Any) -> ConfidenceValue {
         })
     case "string":
         return ConfidenceValue.init(string: value as! String)
+    case "unknown":
+        // Dart could not map this type (a DateTime, a null, a custom object)
+        // and has already sent `value.toString()`. Keep that string: coercing
+        // it to a number would publish a wrong value with nothing to show the
+        // caller their data was discarded.
+        return ConfidenceValue.init(string: value as? String ?? String(describing: value))
     default:
-        return ConfidenceValue.init(integer: 0)
+        // An unrecognised type marker means the Dart and native sides have
+        // drifted. Preserve the value as a string and make the mismatch
+        // visible rather than silently publishing a number.
+        NSLog("%@", "Confidence SDK: unsupported value type '\(type)', publishing it as a string")
+        return ConfidenceValue.init(string: value as? String ?? String(describing: value))
     }
 }
