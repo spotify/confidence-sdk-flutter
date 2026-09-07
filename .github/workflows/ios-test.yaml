@@ -65,8 +65,26 @@ jobs:
           # test timeout further down.
           xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
 
+      - name: Configure Flutter to use CocoaPods
+        run: flutter config --no-enable-swift-package-manager
+
+      # `flutter test` intermittently fails to attach to the Dart VM on a cold
+      # runner: the app builds, installs and launches, but the harness never
+      # connects and the step sits silent until it is killed, reporting
+      # "No tests ran." and "Error waiting for a debug connection: The log
+      # reader failed unexpectedly". Booting the simulator to readiness first
+      # (see the step above) did not stop it, so this is an attach race rather
+      # than a boot race.
+      #
+      # It is intermittent, not deterministic — the same commit passes on some
+      # runs and stalls on others — and a second attempt, with the app already
+      # built and the simulator already warm, has consistently succeeded. Two
+      # bounded attempts fit inside the job's 45 minute budget, whereas the
+      # previous single 30 minute attempt burned almost the whole budget before
+      # failing.
       - name: Run iOS integration tests
-        timeout-minutes: 30
-        run: |
-          flutter config --no-enable-swift-package-manager
-          cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 13
+          max_attempts: 2
+          command: cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
