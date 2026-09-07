@@ -48,9 +48,25 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
+      - name: Boot iOS simulator and wait until it is ready
+        run: |
+          # `simctl boot` returns as soon as boot is *initiated*, not when the
+          # device is usable, so booting inline let `flutter test` race the Dart
+          # VM debug connection against a still-booting simulator. When it lost
+          # that race the app built, installed and launched but the harness
+          # never attached, so the job sat silent until the 30 minute timeout
+          # with "No tests ran." and "Error waiting for a debug connection".
+          #
+          # Measured locally: `boot` returned after 2s while the device needed
+          # 3s more warm and 17s more cold, most of it "Waiting on Data
+          # Migration". `bootstatus -b` boots if needed and blocks until the
+          # device reports Finished. It also exits non-zero for an invalid
+          # device, so a boot failure fails here instead of masquerading as a
+          # test timeout further down.
+          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
+
       - name: Run iOS integration tests
         timeout-minutes: 30
         run: |
           flutter config --no-enable-swift-package-manager
-          xcrun simctl boot "${{ steps.simulator.outputs.udid }}"
           cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
