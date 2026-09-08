@@ -18,6 +18,10 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
                 return
             }
             confidence.flush()
+            // Confidence.flush() is non-throwing, so there is nothing to catch
+            // here — but the reply is still mandatory: without it the Dart
+            // future never completes.
+            result("")
             break;
         case "readAllFlags":
             guard let flags = try? readAllFlags() else {
@@ -113,12 +117,22 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             break;
         case "track":
             guard let args = call.arguments as? Dictionary<String, Any> else {
+                result("")
                 return
             }
             let eventName = args["eventName"] as! String
             let data = args["data"] as! Dictionary<String, Dictionary<String, Any>>
             let convertedData = data.convert()
-            try? confidence?.track(eventName: eventName, data: convertedData)
+            do {
+                try confidence?.track(eventName: eventName, data: convertedData)
+                result("")
+            } catch {
+                NSLog("%@", "Confidence SDK: \(error)")
+                result(FlutterError(
+                    code: "TRACK_FAILED",
+                    message: "Failed to track event '\(eventName)': \(error)",
+                    details: nil))
+            }
             break;
         case "getBool":
             let arguments = call.arguments as! Dictionary<String, Any>

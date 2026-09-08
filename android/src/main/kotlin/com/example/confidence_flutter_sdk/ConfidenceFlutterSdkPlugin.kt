@@ -39,7 +39,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
   override fun onMethodCall(call: MethodCall, result: Result) {
     when(call.method) {
       "flush" -> {
-        confidence.flush()
+        try {
+          confidence.flush()
+          result.success(null)
+        } catch (e: Exception) {
+          result.error("FLUSH_FAILED", "Failed to flush: ${e.message}", null)
+        }
       }
       "setup" -> {
         val apiKey = call.argument<String>("apiKey")!!
@@ -133,7 +138,12 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         val eventName = call.argument<String>("eventName")!!
         val wrappedData = call.argument<Map<String, Map<String, Any>>>("data")!!
         val data: Map<String, ConfidenceValue> = wrappedData.mapValues { (_, value) -> value.convert() }
-        confidence.track(eventName, data)
+        try {
+          confidence.track(eventName, data)
+          result.success(null)
+        } catch (e: Exception) {
+          result.error("TRACK_FAILED", "Failed to track event '$eventName': ${e.message}", null)
+        }
       }
       else -> result.notImplemented()
     }

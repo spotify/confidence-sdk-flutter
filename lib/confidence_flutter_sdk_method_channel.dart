@@ -64,11 +64,18 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
     if (kDebugMode) {
       print(wrappedData);
     }
+    // track() is intentionally fire-and-forget, so the returned future is not
+    // awaited. Without this handler a native error reply would surface as an
+    // unhandled async error in the host app.
     methodChannel
         .invokeMethod<void>(
         'track',
         {'eventName': eventName, 'data': wrappedData}
-    );
+    ).catchError((Object error) {
+      if (kDebugMode) {
+        print('Confidence SDK: failed to track "$eventName": $error');
+      }
+    });
   }
 
   @override
@@ -129,8 +136,16 @@ class MethodChannelConfidenceFlutterSdk extends ConfidenceFlutterSdkPlatform {
 
   @override
   Future<void> flush() async {
-    await methodChannel
-        .invokeMethod<void>('flush');
+    // The platform interface declares flush() as void, so callers discard this
+    // future. Now that native replies with an error on failure, an unguarded
+    // rejection would surface as an unhandled async error in the host app.
+    try {
+      await methodChannel.invokeMethod<void>('flush');
+    } catch (error) {
+      if (kDebugMode) {
+        print('Confidence SDK: failed to flush: $error');
+      }
+    }
   }
 
 
