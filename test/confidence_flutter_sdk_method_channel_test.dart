@@ -154,4 +154,56 @@ void main() {
       expect((data['d'] as Map<Object?, Object?>)['type'], 'double');
     });
   });
+
+  // The native change here (try/catch plus a main-thread reply in the Android
+  // and iOS plugins) cannot be exercised from Dart, because these tests mock
+  // the platform side entirely. What IS pinned below is the Dart contract the
+  // native fix depends on: these futures must COMPLETE when native replies
+  // with an error, rather than swallowing it or hanging forever. If anyone
+  // adds an error-swallowing `.catchError` to these methods, or drops the
+  // `await`, these tests fail.
+  group('async platform methods surface native errors', () {
+    void mockNativeError(String code) {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(platform.methodChannel, (methodCall) async {
+        methodCalls.add(methodCall);
+        throw PlatformException(code: code, message: 'native failed');
+      });
+    }
+
+    test('fetchAndActivate completes with an error rather than hanging',
+        () async {
+      mockNativeError('FETCH_AND_ACTIVATE_FAILED');
+
+      await expectLater(
+        platform.fetchAndActivate(),
+        throwsA(isA<PlatformException>()
+            .having((e) => e.code, 'code', 'FETCH_AND_ACTIVATE_FAILED')),
+      );
+      expect(methodCalls.single.method, 'fetchAndActivate');
+    });
+
+    test('activateAndFetchAsync completes with an error rather than hanging',
+        () async {
+      mockNativeError('ACTIVATE_AND_FETCH_ASYNC_FAILED');
+
+      await expectLater(
+        platform.activateAndFetchAsync(),
+        throwsA(isA<PlatformException>()
+            .having((e) => e.code, 'code', 'ACTIVATE_AND_FETCH_ASYNC_FAILED')),
+      );
+      expect(methodCalls.single.method, 'activateAndFetchAsync');
+    });
+
+    test('readAllFlags completes with an error rather than hanging', () async {
+      mockNativeError('READ_ALL_FLAGS_FAILED');
+
+      await expectLater(
+        platform.readAllFlags(),
+        throwsA(isA<PlatformException>()
+            .having((e) => e.code, 'code', 'READ_ALL_FLAGS_FAILED')),
+      );
+      expect(methodCalls.single.method, 'readAllFlags');
+    });
+  });
 }
