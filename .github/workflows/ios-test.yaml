@@ -48,9 +48,43 @@ jobs:
           channel: ${{ env.FLUTTER_CHANNEL }}
 
       - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-      - name: Run iOS integration tests
-        timeout-minutes: 30
+      - name: Boot iOS simulator and wait until it is ready
         run: |
-          flutter config --no-enable-swift-package-manager
-          xcrun simctl boot "${{ steps.simulator.outputs.udid }}"
-          cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
+          # `simctl boot` returns as soon as boot is *initiated*, not when the
+          # device is usable, so booting inline let `flutter test` race the Dart
+          # VM debug connection against a still-booting simulator. When it lost
+          # that race the app built, installed and launched but the harness
+          # never attached, so the job sat silent until the 30 minute timeout
+          # with "No tests ran." and "Error waiting for a debug connection".
+          #
+          # Measured locally: `boot` returned after 2s while the device needed
+          # 3s more warm and 17s more cold, most of it "Waiting on Data
+          # Migration". `bootstatus -b` boots if needed and blocks until the
+          # device reports Finished. It also exits non-zero for an invalid
+          # device, so a boot failure fails here instead of masquerading as a
+          # test timeout further down.
+          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
+
+      - name: Configure Flutter to use CocoaPods
+        run: flutter config --no-enable-swift-package-manager
+
+      # `flutter test` intermittently fails to attach to the Dart VM on a cold
+      # runner: the app builds, installs and launches, but the harness never
+      # connects and the step sits silent until it is killed, reporting
+      # "No tests ran." and "Error waiting for a debug connection: The log
+      # reader failed unexpectedly". Booting the simulator to readiness first
+      # (see the step above) did not stop it, so this is an attach race rather
+      # than a boot race.
+      #
+      # It is intermittent, not deterministic — the same commit passes on some
+      # runs and stalls on others — and a second attempt, with the app already
+      # built and the simulator already warm, has consistently succeeded. Two
+      # bounded attempts fit inside the job's 45 minute budget, whereas the
+      # previous single 30 minute attempt burned almost the whole budget before
+      # failing.
+      - name: Run iOS integration tests
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 13
+          max_attempts: 2
+          command: cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
