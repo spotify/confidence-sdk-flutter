@@ -187,6 +187,11 @@ private fun Map<String, Any>.convert(): ConfidenceValue {
     "double" -> return ConfidenceValue.Double(this["value"] as Double)
     "bool" -> return ConfidenceValue.Boolean(this["value"] as Boolean)
     "int" -> return ConfidenceValue.Integer(this["value"] as Int)
+    // Dart could not map this type (a DateTime, a null, a custom object) and
+    // has already sent `value.toString()`. Keep that string rather than
+    // throwing: `track` is fire-and-forget from Dart, so an exception here
+    // would surface only as a logged handler error while the event is lost.
+    "unknown" -> return ConfidenceValue.String(this["value"]?.toString() ?: "")
     "list" -> {
       val list = (this["value"] as List<Map<String, Any>>).map { it.convert() }
       return ConfidenceValue.List(list)
