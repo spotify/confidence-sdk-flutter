@@ -9,7 +9,7 @@ on:
 jobs:
   ios-test:
     runs-on: macos-latest
-    timeout-minutes: 60
+    timeout-minutes: 75
 
     env:
       FLUTTER_CHANNEL: stable
@@ -47,10 +47,14 @@ jobs:
         id: upgrade
         timeout-minutes: 20
         run: bash scripts/test-upgrade.sh "${{ steps.simulator.outputs.udid }}"
+      # Keep main's bounded retry for intermittent Dart VM attach failures.
+      # Allow both attempts alongside the parity and upgrade gates.
       - name: Run iOS integration tests
-        timeout-minutes: 30
-        run: |
-          cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 13
+          max_attempts: 2
+          command: cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
 
       - name: Upload parity and upgrade evidence
         if: always()
