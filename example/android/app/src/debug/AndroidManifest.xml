@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Local resolver used by the parity integration suite. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>

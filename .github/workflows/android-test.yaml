@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
 
@@ -33,7 +35,20 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run integration test on Android emulator
+        id: device-tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
-          script: cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+          script: |
+            bash scripts/test-parity.sh emulator-5554
+            bash scripts/test-upgrade.sh emulator-5554
+            cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+
+      - name: Upload parity and upgrade evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-parity-upgrade
+          path: |
+            ${{ steps.device-tests.outputs.parity_results }}
+            ${{ steps.device-tests.outputs.upgrade_results }}

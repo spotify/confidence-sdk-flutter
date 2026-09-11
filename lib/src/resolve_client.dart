@@ -105,7 +105,8 @@ class ResolveClient {
     final valueJson = json['value'];
     ConfidenceValueStructure? value;
     if (valueJson != null && valueJson is Map<String, dynamic>) {
-      value = ConfidenceValue.fromJson(valueJson) as ConfidenceValueStructure;
+      value = _parseValue(valueJson, {'structSchema': json['flagSchema']})
+          as ConfidenceValueStructure;
     }
 
     return ResolvedFlag(
@@ -115,6 +116,31 @@ class ResolveClient {
       reason: ResolveReason.fromString(json['reason'] as String? ?? ''),
       shouldApply: json['shouldApply'] as bool? ?? true,
     );
+  }
+
+  // JSON numbers do not carry the flag's declared numeric type. Use the
+  // resolver schema, as the native SDKs do, including nested fields/lists.
+  ConfidenceValue _parseValue(dynamic value, Map<String, dynamic>? schema) {
+    if (value is num) {
+      if (schema?.containsKey('doubleSchema') ?? false) {
+        return ConfidenceValue.double_(value.toDouble());
+      }
+      if (schema?.containsKey('intSchema') ?? false) {
+        return ConfidenceValue.integer(value.toInt());
+      }
+    }
+    if (value is Map<String, dynamic>) {
+      final fields =
+          schema?['structSchema']?['schema'] as Map<String, dynamic>?;
+      return ConfidenceValue.structure(value.map((key, value) => MapEntry(
+          key, _parseValue(value, fields?[key] as Map<String, dynamic>?))));
+    }
+    if (value is List) {
+      final elementSchema = schema?['listSchema'] as Map<String, dynamic>?;
+      return ConfidenceValue.list(
+          value.map((item) => _parseValue(item, elementSchema)).toList());
+    }
+    return ConfidenceValue.fromJson(value);
   }
 }
 

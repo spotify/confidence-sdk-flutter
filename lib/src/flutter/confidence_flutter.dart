@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+
 import '../confidence.dart';
 import '../confidence_value.dart';
 import '../resolve_client.dart';
@@ -13,6 +15,7 @@ class ConfidenceFlutter {
     ConfidenceRegion region = ConfidenceRegion.global,
     Map<String, ConfidenceValue> initialContext = const {},
     String? resolveBaseUrl,
+    http.Client? httpClient,
   }) async {
     final storage = await FlutterStorage.create();
     final visitorIdManager = VisitorIdManager();
@@ -37,6 +40,7 @@ class ConfidenceFlutter {
       builder.resolveBaseUrl(resolveBaseUrl);
     }
 
+    if (httpClient != null) builder.httpClient(httpClient);
     return builder.build();
   }
 }

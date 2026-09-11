@@ -31,6 +31,7 @@ typedef ConfidenceFactory = Future<Confidence> Function(
 
 class ConfidenceFlutterSdk {
   Confidence? _confidence;
+  bool _isInitialized = false;
   String? _apiKey;
   String? _resolveBaseUrl;
   Map<String, dynamic>? _pendingContext;
@@ -43,15 +44,18 @@ class ConfidenceFlutterSdk {
   Future<void> setup(String apiKey,
       [LoggingLevel loggingLevel = LoggingLevel.WARN,
       String? resolveBaseUrl]) async {
+    _confidence = null;
+    _isInitialized = false;
     _apiKey = apiKey;
     _resolveBaseUrl = resolveBaseUrl;
+    await _ensureConfidence();
   }
 
   Future<void> putContext(String key, dynamic value) async {
     final c = _confidence;
     if (c != null) {
       c.putContextLocal(key, _toConfidenceValue(value));
-      await c.fetchAndActivate();
+      if (_isInitialized) await fetchAndActivate();
     } else {
       _pendingContext ??= {};
       _pendingContext![key] = value;
@@ -64,7 +68,7 @@ class ConfidenceFlutterSdk {
       for (final entry in context.entries) {
         c.putContextLocal(entry.key, _toConfidenceValue(entry.value));
       }
-      await c.fetchAndActivate();
+      if (_isInitialized) await fetchAndActivate();
     } else {
       _pendingContext ??= {};
       _pendingContext!.addAll(context);
@@ -73,12 +77,19 @@ class ConfidenceFlutterSdk {
 
   Future<void> fetchAndActivate() async {
     final c = await _ensureConfidence();
-    await c.fetchAndActivate();
+    try {
+      await c.fetchAndActivate();
+    } catch (_) {
+      // Native fetchAndActivate also activates disk on a failed cold fetch.
+      await c.activate();
+    }
+    _isInitialized = true;
   }
 
   Future<void> activateAndFetchAsync() async {
     final c = await _ensureConfidence();
     await c.activateAndFetchAsync();
+    _isInitialized = true;
   }
 
   String getString(String key, String defaultValue) =>
@@ -95,21 +106,8 @@ class ConfidenceFlutterSdk {
 
   Map<String, dynamic> getObject(
       String key, Map<String, dynamic> defaultValue) {
-    final c = _confidence;
-    if (c == null) return defaultValue;
-    final resolution = c.currentResolution;
-    if (resolution == null) return defaultValue;
-
-    final parts = key.split('.');
-    final flagName = parts[0];
-    final flag = resolution.flags.where((f) => f.flag == flagName).firstOrNull;
-    ConfidenceValue? value = flag?.value;
-    for (final property in parts.skip(1)) {
-      if (value is! ConfidenceValueStructure) return defaultValue;
-      value = value.value[property];
-    }
-    if (value is! ConfidenceValueStructure) return defaultValue;
-    return value.toPlainJson() as Map<String, dynamic>;
+    return _confidence?.getValue<Map<String, dynamic>>(key, defaultValue) ??
+        defaultValue;
   }
 
   void track(String eventName, Map<String, dynamic> data) {
@@ -121,7 +119,8 @@ class ConfidenceFlutterSdk {
     _confidence?.flush();
   }
 
-  Future<bool> isStorageEmpty() async => _confidence?.isStorageEmpty() ?? true;
+  Future<bool> isStorageEmpty() async =>
+      _confidence == null ? true : await _confidence!.isStorageEmpty();
 
   Future<Confidence> _ensureConfidence() async {
     final existing = _confidence;
@@ -169,6 +168,6 @@ class ConfidenceFlutterSdk {
     if (value is List) {
       return ConfidenceValue.list(value.map(_toConfidenceValue).toList());
     }
-    return ConfidenceValue.null_();
+    return ConfidenceValue.string(value.toString());
   }
 }

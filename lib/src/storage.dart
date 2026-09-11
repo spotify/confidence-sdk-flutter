@@ -28,8 +28,7 @@ class DiskStorage implements Storage {
 
   DiskStorage(this._directoryPath);
 
-  String _filePath(String key) =>
-      '$_directoryPath/${key.replaceAll('/', '_')}';
+  String _filePath(String key) => '$_directoryPath/${key.replaceAll('/', '_')}';
 
   @override
   Future<String?> read(String key) async {
@@ -42,7 +41,15 @@ class DiskStorage implements Storage {
   Future<void> write(String key, String data) async {
     final file = File(_filePath(key));
     await file.parent.create(recursive: true);
-    await file.writeAsString(data);
+    // Publish complete documents so readers never observe a truncated cache.
+    final staging = await file.parent.createTemp('.confidence-write-');
+    try {
+      final stagedFile = File('${staging.path}/data');
+      await stagedFile.writeAsString(data, flush: true);
+      await stagedFile.rename(file.path);
+    } finally {
+      await staging.delete(recursive: true);
+    }
   }
 
   @override

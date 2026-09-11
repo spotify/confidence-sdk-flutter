@@ -1,5 +1,9 @@
 # Native Dart SDK for Confidence Flutter — Implementation Plan
 
+> Status update (2026-09-11): the bridge was removed during implementation.
+> Validation now compares separate checkouts; see [the parity report](native-dart-parity.md)
+> for the implemented test gate and remaining migration differences.
+
 ## Context
 
 The current `confidence_flutter_sdk` (v0.2.1) is a thin method-channel bridge. The Dart layer (`lib/`) is three files totaling ~160 lines — just an in-memory flag cache, type wrappers for platform serialization, and `unawaited()` calls to native for apply tracking. All real logic lives in the Kotlin Android SDK (`confidence-sdk-android:0.6.2`) and the Swift SDK (git submodule at `ios/Classes/confidence-sdk`).

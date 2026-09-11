@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -62,6 +63,61 @@ void main() {
       await manager.apply('my-flag', 'token-123');
 
       expect(capturedRequests, hasLength(1));
+    });
+
+    test('deduplicates a burst of concurrent first evaluations', () async {
+      final manager = ApplyManager(
+        storage: storage,
+        applyClient: ApplyClient(
+          httpClient: makeApplyClient(),
+          clientSecret: 'test-secret',
+          region: ConfidenceRegion.global,
+        ),
+      );
+      await Future.wait(
+          List.generate(20, (_) => manager.apply('flag', 'token')));
+      expect(capturedRequests, hasLength(1));
+    });
+
+    test('a stalled send cannot prevent later exposures from surviving restart',
+        () async {
+      final started = Completer<void>();
+      final response = Completer<http.Response>();
+      final manager = ApplyManager(
+          storage: storage,
+          applyClient: ApplyClient(
+            httpClient: MockClient((_) async {
+              if (!started.isCompleted) {
+                started.complete();
+                return response.future;
+              }
+              return http.Response('{}', 503);
+            }),
+            clientSecret: 'test-secret',
+            region: ConfidenceRegion.global,
+          ));
+      final first = manager.apply('first', 'token');
+      await started.future;
+      final second = manager.apply('second', 'token');
+      await Future<void>.delayed(Duration.zero);
+      final saved =
+          jsonDecode((await storage.read(ApplyManager.storageKey))!) as Map;
+      expect(saved['token'].keys, containsAll(['first', 'second']));
+      expect(saved['token']['second']['sent'], false);
+      response.complete(http.Response('{}', 200));
+      await Future.wait([first, second]);
+      final restarted = ApplyManager(
+          storage: storage,
+          applyClient: ApplyClient(
+            httpClient: makeApplyClient(),
+            clientSecret: 'test-secret',
+            region: ConfidenceRegion.global,
+          ));
+      await restarted.restore();
+      expect(capturedRequests, hasLength(1));
+      final retried = jsonDecode(capturedRequests.single.body)['flags'][0];
+      expect(retried['flag'], 'flags/second');
+      expect(retried['applyTime'], saved['token']['second']['time']);
     });
 
     test('sends separate requests for different flags', () async {
@@ -169,8 +225,14 @@ void main() {
       await manager.apply('my-flag', 'token-123');
 
       expect(capturedRequests, hasLength(2));
-      final stored = await storage.read('confidence.apply.cache');
-      expect(jsonDecode(stored!) as Map<String, dynamic>, isEmpty);
+      final restarted = ApplyManager(
+          storage: storage,
+          applyClient: ApplyClient(
+              httpClient: makeApplyClient(),
+              clientSecret: 'test-secret',
+              region: ConfidenceRegion.global));
+      await restarted.restore();
+      expect(capturedRequests, hasLength(2));
     });
 
     test('restores pending applies from storage on creation', () async {
@@ -219,8 +281,14 @@ void main() {
       await manager.restore();
 
       expect(capturedRequests, hasLength(2));
-      final stored = await storage.read('confidence.apply.cache');
-      expect(jsonDecode(stored!) as Map<String, dynamic>, isEmpty);
+      final restarted = ApplyManager(
+          storage: storage,
+          applyClient: ApplyClient(
+              httpClient: makeApplyClient(),
+              clientSecret: 'test-secret',
+              region: ConfidenceRegion.global));
+      await restarted.restore();
+      expect(capturedRequests, hasLength(2));
     });
   });
 

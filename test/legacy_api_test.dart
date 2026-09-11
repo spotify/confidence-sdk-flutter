@@ -208,7 +208,8 @@ void main() {
       expect(sdk.getString('hawkflag.message', ''), equals('new assignment'));
     });
 
-    test('putAllContext queues context before initialization', () async {
+    test('putAllContext sets context without resolving before first fetch',
+        () async {
       var factoryCalls = 0;
       var resolveCalls = 0;
       Map<String, dynamic>? resolvedContext;
@@ -232,7 +233,7 @@ void main() {
       await sdk.putContext('user_id', 'queued-user');
       await sdk.putAllContext({'country': 'SE'});
 
-      expect(factoryCalls, equals(0));
+      expect(factoryCalls, equals(1));
       expect(resolveCalls, equals(0));
 
       await sdk.fetchAndActivate();
@@ -241,6 +242,75 @@ void main() {
       expect(resolveCalls, equals(1));
       expect(resolvedContext, containsPair('user_id', 'queued-user'));
       expect(resolvedContext, containsPair('country', 'SE'));
+    });
+
+    test('track works after setup without fetching flags', () async {
+      final event = Completer<http.Request>();
+      final sdk = ConfidenceFlutterSdk(
+        confidenceFactory: (_, {resolveBaseUrl}) async => _buildConfidence(
+          MockClient((request) async {
+            expect(request.url.path, '/v1/events:publish');
+            event.complete(request);
+            return http.Response('{}', 200);
+          }),
+          MemoryStorage(),
+        ),
+      );
+      await sdk.setup('test-secret');
+      await sdk.putContext('targeting_key', 'user');
+      final timestamp = DateTime.utc(2026, 1, 2);
+      sdk.track('checkout', {
+        'nested': {'unsupported': timestamp, 'null': null},
+      });
+      final request = await event.future.timeout(const Duration(seconds: 2));
+      final body = jsonDecode(request.body) as Map<String, dynamic>;
+      final payload = body['events'][0]['payload'] as Map<String, dynamic>;
+      expect(payload['context'], {'targeting_key': 'user'});
+      expect(payload['nested'],
+          {'unsupported': timestamp.toString(), 'null': 'null'});
+    });
+
+    test('invalid event data does not escape the fire-and-forget API',
+        () async {
+      var requests = 0;
+      final sdk = ConfidenceFlutterSdk(
+        confidenceFactory: (_, {resolveBaseUrl}) async => _buildConfidence(
+          MockClient((_) async {
+            requests++;
+            return http.Response('{}', 200);
+          }),
+          MemoryStorage(),
+        ),
+      );
+      await sdk.setup('test-secret');
+      sdk.track('checkout', {'invalid': double.nan});
+      await _pumpPendingFetches();
+      expect(requests, 0);
+    });
+
+    test('failed cold fetch activates disk instead of returning defaults',
+        () async {
+      final storage = MemoryStorage();
+      var offline = false;
+      ConfidenceFlutterSdk createSdk() => ConfidenceFlutterSdk(
+            confidenceFactory: (_, {resolveBaseUrl}) async => _buildConfidence(
+              MockClient((_) async => offline
+                  ? http.Response('{}', 503)
+                  : http.Response(
+                      jsonEncode(
+                          _resolveResponse(value: {'message': 'cached'})),
+                      200)),
+              storage,
+            ),
+          );
+      final original = createSdk();
+      await original.setup('test-secret');
+      await original.fetchAndActivate();
+      offline = true;
+      final restarted = createSdk();
+      await restarted.setup('test-secret');
+      await restarted.fetchAndActivate();
+      expect(restarted.getString('hawkflag.message', 'fallback'), 'cached');
     });
 
     test('activateAndFetchAsync activates cached values across instances',

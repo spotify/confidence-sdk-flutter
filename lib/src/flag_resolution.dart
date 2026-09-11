@@ -17,12 +17,12 @@ class ResolvedFlag {
   });
 
   Map<String, dynamic> toJson() => {
-    'flag': flag,
-    'variant': variant,
-    'value': value?.toJson(),
-    'reason': reason.toJson(),
-    'shouldApply': shouldApply,
-  };
+        'flag': flag,
+        'variant': variant,
+        'value': value?.toJson(),
+        'reason': reason.toJson(),
+        'shouldApply': shouldApply,
+      };
 
   factory ResolvedFlag.fromJson(Map<String, dynamic> json) {
     final valueJson = json['value'];
@@ -51,7 +51,7 @@ class FlagResolution {
 
   Evaluation<T> evaluate<T>(String flagPath, T defaultValue) {
     final parts = flagPath.split('.');
-    if (parts.length < 2) {
+    if (parts.length < 2 && T != Map<String, dynamic>) {
       return Evaluation(
         value: defaultValue,
         reason: ResolveReason.error,
@@ -99,8 +99,7 @@ class FlagResolution {
         variant: resolvedFlag.variant,
         reason: ResolveReason.error,
         errorCode: 'TYPE_MISMATCH',
-        errorMessage:
-            'Expected $T but got ${extracted.runtimeType}',
+        errorMessage: 'Expected $T but got ${extracted.runtimeType}',
       );
     }
 
@@ -145,13 +144,16 @@ class FlagResolution {
     if (T == double && value is ConfidenceValueDouble) {
       return value.value as T;
     }
+    if (value is ConfidenceValueStructure && T == Map<String, dynamic>) {
+      return value.toPlainJson() as T;
+    }
     return null;
   }
 
   Map<String, dynamic> toJson() => {
-    'resolvedFlags': flags.map((f) => f.toJson()).toList(),
-    'resolveToken': resolveToken,
-  };
+        'resolvedFlags': flags.map((f) => f.toJson()).toList(),
+        'resolveToken': resolveToken,
+      };
 
   factory FlagResolution.fromJson(Map<String, dynamic> json) {
     final flagsList = (json['resolvedFlags'] as List?)

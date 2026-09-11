@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
+
+import 'async_gate.dart';
 
 import 'apply_client.dart';
 import 'apply_manager.dart';
@@ -50,10 +53,22 @@ class Confidence {
   }
 
   Future<void> activate() async {
-    final stored = await _state.storage.read('confidence.flags.resolve');
-    if (stored != null) {
-      final json = jsonDecode(stored) as Map<String, dynamic>;
-      _state.currentResolution = FlagResolution.fromJson(json);
+    final resolution = await _readCache();
+    if (resolution != null) _state.currentResolution = resolution;
+  }
+
+  Future<FlagResolution?> _readCache() async {
+    try {
+      final stored = await _state.storage.read('confidence.flags.resolve');
+      if (stored == null) return null;
+      return FlagResolution.fromJson(
+          jsonDecode(stored) as Map<String, dynamic>);
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    } on FileSystemException {
+      return null;
     }
   }
 
@@ -78,7 +93,8 @@ class Confidence {
 
   FlagResolution? get currentResolution => _state.currentResolution;
 
-  bool isStorageEmpty() => _state.currentResolution == null;
+  Future<bool> isStorageEmpty() async =>
+      _state.currentResolution == null && await _readCache() == null;
 
   T getValue<T>(String flagPath, T defaultValue) =>
       getFlag<T>(flagPath, defaultValue).value;
@@ -152,15 +168,19 @@ class Confidence {
   // -- Events --
 
   void track(String eventName, [Map<String, ConfidenceValue> data = const {}]) {
-    _state.eventsClient?.send(
-      eventName: eventName,
-      payload: data,
-      context: getContext(),
-    );
+    _state.eventsClient
+        ?.send(
+          eventName: eventName,
+          payload: data,
+          context: getContext(),
+        )
+        .ignore();
   }
 
   void flush() {
-    // Best-effort: currently events are sent immediately, no buffering.
+    _state.applyManager?.restore().ignore();
+    _state.eventsClient?.restore().ignore();
+    // Retry migrated native events and persisted exposures.
   }
 
   // -- Internal --
@@ -241,6 +261,7 @@ class ConfidenceBuilder {
     );
 
     final eventsClient = EventsClient(
+      storage: storage,
       httpClient: httpClient,
       clientSecret: _clientSecret,
       region: _region,
@@ -253,6 +274,8 @@ class ConfidenceBuilder {
       eventsClient: eventsClient,
     );
 
+    applyManager.restore().ignore();
+    eventsClient.restore().ignore();
     return Confidence._(
       state: state,
       localContext: _initialContext,
@@ -265,7 +288,7 @@ class _ConfidenceState {
   final ResolveClient resolveClient;
   final ApplyManager? applyManager;
   final EventsClient? eventsClient;
-  final _AsyncGate asyncGate = _AsyncGate();
+  final AsyncGate asyncGate = AsyncGate();
   FlagResolution? currentResolution;
 
   _ConfidenceState({
@@ -274,22 +297,4 @@ class _ConfidenceState {
     this.applyManager,
     this.eventsClient,
   });
-}
-
-class _AsyncGate {
-  Completer<void>? _pending;
-
-  Future<void> run(Future<void> Function() operation) async {
-    while (_pending != null) {
-      await _pending!.future;
-    }
-    _pending = Completer<void>();
-    try {
-      await operation();
-    } finally {
-      final p = _pending!;
-      _pending = null;
-      p.complete();
-    }
-  }
 }

@@ -65,3 +65,22 @@ flutter run
 ```
 
 or open the example app in Xcode and run it from there.
+
+### Validating the Dart migration
+
+Run `flutter test --coverage` and `flutter analyze` for the Dart suite.
+With an Android emulator or iOS simulator running, use
+`bash scripts/test-parity.sh <device-id>` to run the same integration contract
+against the pinned bridged SDK and this worktree. No backend key is needed.
+See [the parity report](plans/native-dart-parity.md) for coverage, known platform
+limitations, and migration behavior that still needs validation.
+
+To verify an in-place update with native-generated IDs, caches, and queued events:
+
+```sh
+bash scripts/test-upgrade.sh <simulator-or-emulator-id>
+```
+
+This resets the **example app** before seeding the old SDK, then preserves its
+app data while installing the rewrite and restarting it. See the
+[upgrade scenarios](plans/native-dart-upgrade.md) for assertions and limits.

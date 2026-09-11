@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:confidence_flutter_sdk/src/storage.dart';
@@ -124,6 +125,32 @@ void main() {
       expect(await storage.exists('key'), isTrue);
       await storage.delete('key');
       expect(await storage.exists('key'), isFalse);
+    });
+
+    test('concurrent readers always see complete JSON documents', () async {
+      final documents = List.generate(
+          20, (i) => jsonEncode({'value': List.filled(i * 1000, i)}));
+      await storage.write('flags', documents.first);
+      var writing = true;
+      await Future.wait([
+        Future<void>(() async {
+          try {
+            for (final document in documents) {
+              await storage.write('flags', document);
+            }
+          } finally {
+            writing = false;
+          }
+        }),
+        Future<void>(() async {
+          while (writing) {
+            final stored = await storage.read('flags');
+            expect(documents.contains(stored), isTrue,
+                reason: 'A reader observed a partial cache write');
+            expect(jsonDecode(stored!), isA<Map>());
+          }
+        }),
+      ]);
     });
 
     test('handles special characters in data', () async {
