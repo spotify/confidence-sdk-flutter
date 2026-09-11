@@ -1,3 +1,0 @@
-[submodule "ios/Classes/confidence-sdk"]
-	path = ios/Classes/confidence-sdk
-	url = https://github.com/spotify/confidence-sdk-swift
