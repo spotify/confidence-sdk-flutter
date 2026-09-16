@@ -89,6 +89,11 @@ Define and test an outcome table for empty cache, first launch offline, usable c
 
 The old bridge/native error handling does not map one-to-one to OpenFeature. Specify provider events and resolution error details for each outcome, while retaining offline functionality where the cached context is valid. Guard late network completions during context changes, provider replacement, and shutdown.
 
+Implementation decisions: discard corrupt cache data rather than preserving it;
+initialize with defaults when no usable snapshot exists. Report exposure only
+after a successful typed read, including a valid backend-directed default, never
+for missing properties or type errors. See the [parity inventory](dart-client-provider-parity.md).
+
 ### Confidence transport and telemetry
 
 - Implement Confidence bulk resolve, apply, and event publishing directly in Dart. Preserve request/response schemas, client credential handling, context mapping, and SDK metadata.

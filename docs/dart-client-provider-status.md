@@ -38,35 +38,30 @@ The SDK requires both callback completion **and** a terminal provider event:
 Returning a completed future alone times out. Keep this requirement in the real
 provider's lifecycle implementation. Use one provider instance per domain.
 
-## Native parity inventory (in progress)
+## Native parity inventory
 
-Pinned Swift source was inspected remotely: the local submodule checkout is at
-a different revision and must not serve as the pinned behavior baseline.
+The [parity inventory](dart-client-provider-parity.md) now compares the pinned
+Android and Swift startup/cache behavior, storage encodings, identity locations,
+exposure eligibility, and delivery differences. Separate downloaded source
+archives were used; the existing Swift submodule checkout was not modified.
 
-| Area | Verified observation | Remaining evidence |
-| --- | --- | --- |
-| Swift startup | `fetchAndActivate` catches fetch errors then loads disk; an absent file returns the empty snapshot; corrupt data throws | Compare pinned Android outcomes and specify OpenFeature errors/events |
-| Swift context mismatch | Native evaluation can return a cached match with reason `stale` for a different context | The agreed new contract forbids serving another identity's assignment; test rejection in the new runtime |
-| Swift identity | Builder injects `visitor_id`; `VisitorUtil` persists `confidence.visitor_id` in standard UserDefaults | Prove Flutter utility access without prefixed-key assumptions; compare Android identity ownership and formats |
-| Swift flag storage | JSONEncoder data under Application Support / `com.confidence.cache` / bundle ID; atomic writes | Generate real flags/apply fixtures and access these paths on a device |
-| Swift event response | HTTP 200 acknowledges the batch even with per-event errors; 429 retries; other 4xx acknowledge/discard; other statuses retry | Compare Android, batch limits, retry timing, and restart deduplication before choosing shared behavior |
-| Android events | The plan records global-only routing in 0.6.9 | Regional routing is an agreed intentional change, not unresolved parity |
+Confirmed decisions: discard corrupt cache data and use defaults when no usable
+snapshot exists; report exposure only after successful typed reads (including
+valid backend-directed defaults). Failed reads must not enqueue exposure work.
 
-Sources for the inspected Swift observations:
-[startup, context, builder](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/Confidence.swift),
-[evaluation](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/FlagEvaluation.swift),
-[identity](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/VisitorUtil.swift),
-[storage](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/DefaultStorage.swift),
-[event responses](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/RemoteConfidenceClient.swift).
+Eight native-generated fixtures cover flags, mixed apply states, and sealed and
+unfinished event records. Reproduction tools and evidence limitations are in
+[`tool/native_fixtures`](../packages/confidence_openfeature_provider/tool/native_fixtures/README.md).
+Swift native-model serialization/decoding and Android storage generation pass;
+the pinned Android `FileDiskStorageTest` suite also passes.
 
 ## Next increment and gates
 
-1. Complete the pinned Android/Swift outcome matrix, including first launch
-   offline, valid cache with fetch failure, corrupt cache, and context mismatch.
-   Bring actual platform disagreements back for a decision before coding them.
-2. Generate serialized native fixtures for flags, apply state, visitor identity,
-   sealed events, and unfinished batches. No real native fixtures are committed
-   yet; synthetic JSON must not be presented as migration evidence.
+1. Implement the documented startup outcome matrix when adding lifecycle support.
+   Resolve remaining batching/scheduling, storage-budget, and apply HTTP-policy
+   differences before implementing delivery.
+2. Extend the native fixtures with visitor stores, older shipped formats, and
+   damaged multi-record batches; test interrupted/repeated import.
 3. Verify mobile utility access to the legacy files and identity stores. Android
    `getDir("events")` is not its documents directory. Test both mobile platforms
    before selecting dependencies or claiming a minimum Flutter version.
