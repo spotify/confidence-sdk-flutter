@@ -125,7 +125,9 @@ They cover flags, apply states, and sealed/unfinished events with synthetic
 identities and timestamps. They are actual native serialization output, not real
 customer data or proof of mobile sandbox access.
 
-Still required: on-device preference/path access, older shipped-format inventory,
+Initial preference/path access is now verified on both mobile platforms; see the
+[mobile storage probe](../packages/confidence_openfeature_provider/tool/mobile_storage_probe/README.md).
+Still required: older shipped-format inventory,
 visitor-store fixtures, crash-safe import tracking, damaged-batch recovery,
 in-place Android/iOS upgrade tests, backend SDK identifier confirmation, and the
 delivery-policy decisions above. No legacy mobile data was modified by this work.

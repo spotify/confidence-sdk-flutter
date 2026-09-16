@@ -15,9 +15,10 @@ provider; no placeholder runtime reports successful initialization.
 - The proposed `confidence_openfeature_provider` package API returned 404 when
   checked. This does not reserve the name or establish publisher ownership.
   `publish_to: none` prevents publishing this unfinished package.
-- The foundation analyzes and runs on a separate Dart 3.12.2 toolchain. The local
-  Flutter installation's Dart 3.6.1 is insufficient. A supported minimum Flutter
-  version remains a mobile integration gate; it has not been tested here.
+- The package now requires Flutter 3.44.2 / Dart 3.12.2. An isolated Flutter
+  checkout was used for Android and iOS storage-access tests; the existing local
+  Flutter installation was not upgraded. Utility versions and build limitations
+  are recorded in the mobile probe below.
 - Configuration defaults: global region, warning logging, fetch-and-activate.
   HTTP(S) resolver overrides preserve proxy path prefixes and trailing slashes
   are normalized. Credentials, query strings, and fragments in the base URL are
@@ -55,6 +56,20 @@ unfinished event records. Reproduction tools and evidence limitations are in
 Swift native-model serialization/decoding and Android storage generation pass;
 the pinned Android `FileDiskStorageTest` suite also passes.
 
+## Mobile storage access
+
+`LegacyStorage` now locates the legacy flag/apply files and event directory and
+reads the native visitor ID on Android and iOS. It performs no migration, decoding,
+deletion, activation, or identity generation. Initialize Flutter bindings before
+calling it; keep it off synchronous evaluation paths.
+
+Native-seeded probes pass on Android API 36 and iOS 26.3 with Flutter 3.44.2.
+They verify paths, file contents, unprefixed identity reads, native preference
+updates, and missing-identity behavior. See the
+[mobile storage probe](../packages/confidence_openfeature_provider/tool/mobile_storage_probe/README.md)
+for reproduction, exact dependencies, and limitations. This does not replace the
+required in-place upgrade tests.
+
 ## Next increment and gates
 
 1. Implement the documented startup outcome matrix when adding lifecycle support.
@@ -62,9 +77,9 @@ the pinned Android `FileDiskStorageTest` suite also passes.
    differences before implementing delivery.
 2. Extend the native fixtures with visitor stores, older shipped formats, and
    damaged multi-record batches; test interrupted/repeated import.
-3. Verify mobile utility access to the legacy files and identity stores. Android
-   `getDir("events")` is not its documents directory. Test both mobile platforms
-   before selecting dependencies or claiming a minimum Flutter version.
+3. Extend the mobile path/identity checks to retained app sandboxes during actual
+   upgrades and the final supported OS matrix. Initial access is verified on
+   both platforms; the utility dependencies have been selected.
 4. Define transport/storage contracts from those verified models, then add the
    functional provider and builder, resolve transport, and local evaluation.
    Backend support for the new SDK telemetry identifier remains unverified.
@@ -72,6 +87,6 @@ the pinned Android `FileDiskStorageTest` suite also passes.
    mobile cutover steps in the plan. In-place upgrades, live smoke tests,
    publication dry run, and removal of the bridge have not been performed.
 
-Validation after review: 22 tests pass with Dart 3.12.2; static analysis
-passes with fatal infos. The separate CI job performs these checks without
-initializing native submodules or installing Flutter.
+Validation: 22 unit tests pass; static analysis passes with fatal infos. The
+separate CI job now uses Flutter 3.44.2 for the utility dependencies, without
+initializing Confidence native submodules. Mobile probe results are listed above.
