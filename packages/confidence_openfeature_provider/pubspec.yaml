@@ -1,0 +1,15 @@
+name: confidence_openfeature_provider
+description: Dart-native Confidence provider for the OpenFeature client SDK.
+version: 0.0.1-dev.1
+publish_to: none
+repository: https://github.com/spotify/confidence-sdk-flutter
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  openfeature_dart_client_sdk: 0.0.1-beta.1
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.26.3

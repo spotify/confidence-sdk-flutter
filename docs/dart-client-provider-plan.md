@@ -1,6 +1,8 @@
 # Dart-native Confidence OpenFeature client provider
 
-Status: implementation plan; no provider code changed.
+Status: implementation started. See [implementation status](dart-client-provider-status.md)
+for completed groundwork and outstanding gates. The design below remains the
+agreed plan; it is not a claim of implementation completeness.
 
 ## Agreed scope
 
