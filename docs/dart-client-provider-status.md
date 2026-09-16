@@ -29,11 +29,9 @@ provider; no placeholder runtime reports successful initialization.
 
 ## Upstream contract findings
 
-`test/upstream_contract_test.dart` is explicitly a test provider, not the
-Confidence runtime. It implements all seven required capabilities plus
-`DomainScopedProvider` and exercises registration, five synchronous typed
-resolvers, context reconciliation, tracking, event forwarding, domain isolation,
-and shutdown against the published SDK.
+An initial test-only provider probe was removed during review because it tested
+the upstream SDK rather than Confidence behavior. Add lifecycle and domain
+isolation tests against the real provider when it is implemented.
 
 The SDK requires both callback completion **and** a terminal provider event:
 `ready` for initialization, `contextChanged` for successful reconciliation.
@@ -79,6 +77,6 @@ Sources for the inspected Swift observations:
    mobile cutover steps in the plan. In-place upgrades, live smoke tests,
    publication dry run, and removal of the bridge have not been performed.
 
-Validation for this increment: 25 tests pass with Dart 3.12.2; static analysis
+Validation after review: 22 tests pass with Dart 3.12.2; static analysis
 passes with fatal infos. The separate CI job performs these checks without
 initializing native submodules or installing Flutter.

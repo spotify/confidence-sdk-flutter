@@ -2,7 +2,7 @@
 
 This independent package is the first implementation increment of the
 [Dart provider plan](../../docs/dart-client-provider-plan.md). It currently
-contains configuration, endpoint routing, and an upstream contract probe.
+contains configuration and endpoint routing.
 It does **not** yet provide a usable Confidence provider or migrate device data.
 Publication is disabled until the migration and mobile release gates pass.
 
