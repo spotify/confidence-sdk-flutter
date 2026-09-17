@@ -70,6 +70,22 @@ updates, and missing-identity behavior. See the
 for reproduction, exact dependencies, and limitations. This does not replace the
 required in-place upgrade tests.
 
+## Snapshot decoding
+
+Immutable snapshot models and pure Android/Swift legacy flag-cache decoders now
+preserve context, resolve token, reason, variant, exposure eligibility, recursive
+values, integer/double distinctions, and timestamps. Calendar dates remain
+distinct and retain Swift DateComponents metadata. Both native flag fixtures
+pass, alongside malformed-input and immutability tests. Invalid caches produce
+payload-free errors; file deletion remains the future storage owner's job.
+
+This does not yet import files, activate snapshots, decode apply/event queues,
+or establish compatibility with older shipped formats. Calendar date edge cases
+(including Swift calendar/time-zone conversion) still need native fixture coverage.
+
+SDK attribution is agreed: use Flutter iOS ID 17 / Flutter Android ID 18 from
+the resolver proto, with the Dart package version. No new identifier is needed.
+
 ## Next increment and gates
 
 1. Implement the documented startup outcome matrix when adding lifecycle support.
@@ -80,13 +96,12 @@ required in-place upgrade tests.
 3. Extend the mobile path/identity checks to retained app sandboxes during actual
    upgrades and the final supported OS matrix. Initial access is verified on
    both platforms; the utility dependencies have been selected.
-4. Define transport/storage contracts from those verified models, then add the
-   functional provider and builder, resolve transport, and local evaluation.
-   Backend support for the new SDK telemetry identifier remains unverified.
+4. Extend the snapshot models with apply/event readers and atomic migration;
+   add the functional provider and builder, resolve transport, and local evaluation.
 5. Continue the remaining persistence, migration, lifecycle, telemetry, and
    mobile cutover steps in the plan. In-place upgrades, live smoke tests,
    publication dry run, and removal of the bridge have not been performed.
 
-Validation: 22 unit tests pass; static analysis passes with fatal infos. The
+Validation: 48 unit tests pass; static analysis passes with fatal infos. The
 separate CI job now uses Flutter 3.44.2 for the utility dependencies, without
 initializing Confidence native submodules. Mobile probe results are listed above.
