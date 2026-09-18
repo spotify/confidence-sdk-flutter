@@ -100,11 +100,57 @@ for missing properties or type errors. See the [parity inventory](dart-client-pr
 - Preserve dot-separated flag/property paths, schema-aware booleans/strings/integers/doubles/objects, nested structures/lists, defaults, reasons, variants, and errors. Share the path walker and schema validation across typed resolvers.
 - Record exposure when a value is actually consumed, using the matching flag and resolve token. Preserve native eligibility and deduplication behavior, including repeated property reads, retries, and restarts. Fetching flags alone must not report exposure.
 - Capture the event's applicable context and timestamp when tracking is called. A later context change must not relabel queued events.
-- Preserve durable batching, retry behavior, explicit flush, and pending work across restarts. Characterize retryable/permanent failures and storage limits from native implementations before specifying the common behavior.
+- Preserve pending work across restarts once persisted, with batching, retries, and explicit flush as specified below. Native queue architecture and scheduling need not be reproduced.
 - Resolve custom-base-URL precedence centrally: override resolve/apply only; event delivery retains its endpoint in the selected region. Test all three regions across resolve, apply, and event publishing, including custom resolver overrides.
 - Use `SDK_ID_FLUTTER_IOS_CONFIDENCE` (17) on iOS and `SDK_ID_FLUTTER_ANDROID_CONFIDENCE` (18) on Android, with the Dart package version. These IDs exist in the resolver's `confidence/flags/resolver/v1/types.proto`; retaining the platform-specific Flutter identity is explicitly agreed. OpenFeature telemetry mapping remains part of runtime implementation.
 
 Region routing is explicitly agreed: use the selected region for flags, exposures, and custom events on both platforms. This follows Swift's routing behavior and intentionally changes Android 0.6.9's global-only custom-event routing. [Swift builder](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/Confidence.swift), [Android uploader](https://github.com/spotify/confidence-sdk-android/blob/59be476908ad7c411e2cdca502e974e460a8e50a/Confidence/src/main/java/com/spotify/confidence/EventSenderUploader.kt)
+
+### Agreed outbox design and delivery trade-offs
+
+Use one versioned JSON outbox per provider storage scope, separate from the flag
+cache. Atomically replace it through one serialized writer, batching writes to
+limit disk work. Use one flush in flight and one shared scheduler for exposure
+and custom-event delivery. Trigger delivery on startup, a fixed interval, a
+batch threshold, explicit flush, and bounded shutdown. Keep defaults internal;
+no public queue-tuning API is planned initially.
+
+Persist pending records before sending them. Keep in-flight state only in
+memory, and durably remove acknowledged records after delivery. Share storage
+and scheduling machinery while keeping apply/event payloads and response
+handling distinct. Retry transient failures with capped backoff and jitter,
+without per-record timers. Exact intervals, thresholds, backoff bounds, storage
+cap/overflow policy, and apply HTTP failure classification still need to be
+specified before delivery implementation.
+
+Accepted guarantees and limits:
+
+- Events retain their original context and timestamp. Exposures are queued only
+  after successful typed reads and deduplicated by resolve token plus flag.
+  This local deduplication does not guarantee exactly-once network delivery.
+- Reads and non-blocking tracking enqueue in memory; persistence is asynchronous.
+  A hard kill before persistence completes can lose those new records. Disk
+  work must not block synchronous flag evaluation.
+- Once persisted, pending records survive process restarts, subject to the
+  eventual documented storage-cap and permanent-failure policies. Atomic file
+  replacement avoids partial JSON writes; it is not an unconditional guarantee
+  against storage failure or power loss.
+- A crash after server acceptance but before durable acknowledgement can cause
+  replay and duplicate delivery. Exactly-once delivery would require backend
+  support; it is not promised by this provider.
+- Explicit `flush()` waits for persistence of work queued before the call and
+  attempts delivery. It does not guarantee server acceptance or an empty queue
+  during an outage. Persistence/delivery failures must be observable to callers;
+  the precise result API will be defined with the provider utilities.
+- Shutdown attempts a bounded flush. Mobile termination may skip shutdown or
+  interrupt it, so shutdown cannot close the asynchronous persistence window.
+- Legacy queues are still imported. Simplifying runtime storage does not remove
+  crash-safe, repeatable import or preservation of unrelated valid records.
+
+Validate these boundaries with tests for termination before persistence,
+restart after persistence, acknowledgement-write failure, concurrent enqueue
+during flush, and interrupted/repeated migration. Publish these limits in the
+package and application migration documentation before release.
 
 ## On-device migration
 
@@ -127,7 +173,7 @@ Migration work:
 6. Retain recoverable source data until successful import is established. Handle corrupt/truncated records without silently discarding unrelated valid batches. Keep migration diagnostics useful without logging credentials or payloads.
 7. Validate an actual in-place app upgrade on each platform, keeping the app ID and sandbox. A unit test of JSON conversion alone is insufficient.
 
-Migration must not promise exactly-once network delivery where legacy records/backend acknowledgements cannot establish it. Test that migration itself does not add duplicate imports, and preserve the existing delivery guarantees. Legacy caches and queues may lack credential/region ownership metadata; document that limit and validate the normal same-application, same-Confidence-client upgrade before claiming broader compatibility.
+Migration must not promise exactly-once network delivery where legacy records/backend acknowledgements cannot establish it. Test that migration itself does not add duplicate imports, and retain pending work under the documented outbox guarantees above. Legacy caches and queues may lack credential/region ownership metadata; document that limit and validate the normal same-application, same-Confidence-client upgrade before claiming broader compatibility.
 
 ## Delivery plan
 

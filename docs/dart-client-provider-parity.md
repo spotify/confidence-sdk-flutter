@@ -93,8 +93,9 @@ Evidence:
   response; Android does not parse that response body. Network/decode failures
   need separate tests from HTTP response classification.
 - Android flushes at five events or explicit flush. Swift flushes at ten events,
-  every 60 seconds, on startup, and during bounded shutdown. Scheduling and batch
-  size remain a delivery-stage decision; no common behavior is silently selected.
+  every 60 seconds, on startup, and during bounded shutdown. The agreed Dart
+  design uses one shared scheduler with startup, interval, threshold, explicit
+  flush, and bounded shutdown triggers. Numeric defaults remain to be selected.
 - Android advertises a 4 MiB event budget with a 90% threshold, but the inspected
   size check reads a directory's length, not aggregate event bytes. Swift's
   inspected file store has no equivalent cap. A reliable common storage budget
@@ -118,6 +119,12 @@ Evidence:
 [Swift event engine](https://github.com/spotify/confidence-sdk-swift/blob/162684bfc1695256c84909eccb2a6c4ca5e67c80/Sources/Confidence/EventSenderEngine.swift).
 
 ## Evidence limits and next work
+
+The [agreed outbox design](dart-client-provider-plan.md#agreed-outbox-design-and-delivery-trade-offs)
+replaces native queue internals with atomic JSON persistence and shared scheduling.
+The user accepts possible loss before asynchronous persistence and duplicate
+delivery after server acceptance but before durable acknowledgement, provided
+these limits are documented. This does not relax repeatable legacy import.
 
 Native-generated fixtures and reproduction instructions are in
 [`tool/native_fixtures`](../packages/confidence_openfeature_provider/tool/native_fixtures/README.md).

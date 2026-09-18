@@ -88,9 +88,14 @@ the resolver proto, with the Dart package version. No new identifier is needed.
 
 ## Next increment and gates
 
+The simplified outbox design and its crash/durability trade-offs are agreed and
+documented in the [plan](dart-client-provider-plan.md#agreed-outbox-design-and-delivery-trade-offs).
+This is a design decision, not implemented queue behavior: one atomic JSON
+outbox, serialized writes, one flush in flight, and shared fixed scheduling.
+
 1. Implement the documented startup outcome matrix when adding lifecycle support.
-   Resolve remaining batching/scheduling, storage-budget, and apply HTTP-policy
-   differences before implementing delivery.
+   Specify numeric scheduling/batching/backoff defaults, storage cap/overflow,
+   and apply HTTP failure policy before implementing delivery.
 2. Extend the native fixtures with visitor stores, older shipped formats, and
    damaged multi-record batches; test interrupted/repeated import.
 3. Extend the mobile path/identity checks to retained app sandboxes during actual
