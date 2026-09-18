@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:confidence_openfeature_provider/src/snapshot.dart';
-import 'package:confidence_openfeature_provider/src/storage/legacy_flag_decoder.dart';
+import 'package:confidence_openfeature_provider/src/storage/legacy_decoder.dart';
 import 'package:test/test.dart';
 
 void main() {
   for (final platform in LegacyPlatform.values) {
-    final decoder = LegacyFlagDecoder(platform);
+    final decoder = LegacyDecoder(platform);
     final source = File(
       'test/fixtures/legacy/${platform.name}/flags.json',
     ).readAsStringSync();
@@ -19,12 +19,12 @@ void main() {
     FlagSnapshot withValue(Object? value) {
       final root = fixture();
       root['context'] = {'test': value};
-      return decoder.decode(jsonEncode(root));
+      return decoder.decodeFlags(jsonEncode(root));
     }
 
     group(platform.name, () {
       test('decodes native fixture without losing types or metadata', () {
-        final snapshot = decoder.decode(source);
+        final snapshot = decoder.decodeFlags(source);
         expect(snapshot.context, {
           'visitor_id': 'fixture-visitor',
           'targeting_key': 'user-a',
@@ -68,14 +68,16 @@ void main() {
                 ? 'resolveReason'
                 : 'reason'] =
             'FUTURE_REASON';
-        final flag = decoder.decode(jsonEncode(root)).flags['example']!;
+        final flag = decoder.decodeFlags(jsonEncode(root)).flags['example']!;
         expect(flag.shouldApply, isFalse);
         expect(flag.reason, 'FUTURE_REASON');
       });
 
       test('accepts empty snapshots', () {
         expect(
-          decoder.decode('{"context":{},"flags":[],"resolveToken":""}').flags,
+          decoder
+              .decodeFlags('{"context":{},"flags":[],"resolveToken":""}')
+              .flags,
           isEmpty,
         );
       });
@@ -83,7 +85,10 @@ void main() {
       test('rejects duplicate flags', () {
         final root = fixture();
         root['flags'].add(root['flags'][0]);
-        expect(() => decoder.decode(jsonEncode(root)), throwsFormatException);
+        expect(
+          () => decoder.decodeFlags(jsonEncode(root)),
+          throwsFormatException,
+        );
       });
 
       test('rejects malformed flag metadata', () {
@@ -96,14 +101,20 @@ void main() {
         }.entries) {
           final root = fixture();
           root['flags'][0][entry.key] = entry.value;
-          expect(() => decoder.decode(jsonEncode(root)), throwsFormatException);
+          expect(
+            () => decoder.decodeFlags(jsonEncode(root)),
+            throwsFormatException,
+          );
         }
       });
 
       test('rejects absent required snapshot fields', () {
         for (final field in ['flags', 'context', 'resolveToken']) {
           final root = fixture()..remove(field);
-          expect(() => decoder.decode(jsonEncode(root)), throwsFormatException);
+          expect(
+            () => decoder.decodeFlags(jsonEncode(root)),
+            throwsFormatException,
+          );
         }
       });
 
@@ -132,7 +143,7 @@ void main() {
           '{"context":"secret-token"}',
         ]) {
           try {
-            decoder.decode(input);
+            decoder.decodeFlags(input);
             fail('Expected invalid cache');
           } on FormatException catch (error) {
             expect(error.message, 'Invalid legacy flag cache.');
@@ -161,7 +172,9 @@ void main() {
               ..remove('value')
               ..remove('variant')
               ..remove('shouldApply');
-            final flag = decoder.decode(jsonEncode(root)).flags['example']!;
+            final flag = decoder
+                .decodeFlags(jsonEncode(root))
+                .flags['example']!;
             expect(flag.value, isNull);
             expect(flag.variant, isNull);
             expect(flag.shouldApply, isTrue);
@@ -194,7 +207,7 @@ void main() {
           final root = fixture();
           root['flags'][0].remove('value');
           expect(
-            decoder.decode(jsonEncode(root)).flags['example']!.value,
+            decoder.decodeFlags(jsonEncode(root)).flags['example']!.value,
             isEmpty,
           );
         });

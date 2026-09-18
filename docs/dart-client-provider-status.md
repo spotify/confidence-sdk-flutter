@@ -79,12 +79,28 @@ distinct and retain Swift DateComponents metadata. Both native flag fixtures
 pass, alongside malformed-input and immutability tests. Invalid caches produce
 payload-free errors; file deletion remains the future storage owner's job.
 
-This does not yet import files, activate snapshots, decode apply/event queues,
+This does not yet import files, activate snapshots,
 or establish compatibility with older shipped formats. Calendar date edge cases
 (including Swift calendar/time-zone conversion) still need native fixture coverage.
 
 SDK attribution is agreed: use Flutter iOS ID 17 / Flutter Android ID 18 from
 the resolver proto, with the Dart package version. No new identifier is needed.
+
+## Legacy queue decoding
+
+`LegacyDecoder` now shares native value/date conversion across flag, apply,
+and event readers. All eight native fixtures are exercised by Dart tests.
+Apply records retain token, flag, timestamp, and created/sending/sent status;
+the future importer must reset sending to pending and retain sent deduplication
+information. The readers do not replay work or modify files.
+
+Event readers preserve merged context/payload and original timestamps, recover
+valid records around malformed or truncated lines, and return rejected line
+numbers without payloads. Complete records in unfinished files are accepted.
+Physical source positions are retained for future repeatable import; identical
+events are deliberately not deduplicated by payload. Tests compose native
+records into damaged multi-record files; native crash/upgrade evidence and
+durable import tracking are still outstanding.
 
 ## Next increment and gates
 
@@ -101,12 +117,12 @@ outbox, serialized writes, one flush in flight, and shared fixed scheduling.
 3. Extend the mobile path/identity checks to retained app sandboxes during actual
    upgrades and the final supported OS matrix. Initial access is verified on
    both platforms; the utility dependencies have been selected.
-4. Extend the snapshot models with apply/event readers and atomic migration;
+4. Implement the atomic outbox and repeatable migration using the legacy readers;
    add the functional provider and builder, resolve transport, and local evaluation.
 5. Continue the remaining persistence, migration, lifecycle, telemetry, and
    mobile cutover steps in the plan. In-place upgrades, live smoke tests,
    publication dry run, and removal of the bridge have not been performed.
 
-Validation: 48 unit tests pass; static analysis passes with fatal infos. The
+Validation: 71 unit tests pass; static analysis passes with fatal infos. The
 separate CI job now uses Flutter 3.44.2 for the utility dependencies, without
 initializing Confidence native submodules. Mobile probe results are listed above.

@@ -1,18 +1,118 @@
 import 'dart:convert';
 
 import '../snapshot.dart';
+import 'legacy_queue.dart';
 
 enum LegacyPlatform { android, swift }
 
-/// Pure decoder for the pinned native flag caches. No activation or file I/O.
-/// Invalid caches throw a payload-free error; the storage owner handles removal.
-final class LegacyFlagDecoder {
-  const LegacyFlagDecoder(this.platform);
+/// Pure decoders for the pinned native caches. No activation or file I/O.
+/// Invalid flag/apply caches throw payload-free errors. Event batches report
+/// rejected line numbers and preserve other records. The owner handles removal.
+final class LegacyDecoder {
+  const LegacyDecoder(this.platform);
 
   final LegacyPlatform platform;
   bool get _swift => platform == LegacyPlatform.swift;
 
-  FlagSnapshot decode(String source) {
+  /// Decode apply state without dropping sent entries or replaying anything.
+  List<LegacyApply> decodeApply(String source) {
+    try {
+      final root = _map(jsonDecode(source));
+      final records = <LegacyApply>[];
+      final seen = <(String, String)>{};
+      void add(String token, String flag, Object? time, String status) {
+        if (!seen.add((token, flag))) _invalid();
+        records.add(
+          LegacyApply(
+            resolveToken: token,
+            flag: flag,
+            time: _timestamp(time),
+            status: switch (status) {
+              'created' => LegacyApplyStatus.created,
+              'sending' => LegacyApplyStatus.sending,
+              'sent' => LegacyApplyStatus.sent,
+              _ => _invalid(),
+            },
+          ),
+        );
+      }
+
+      if (_swift) {
+        for (final input in _list(root['resolveEvents'])) {
+          final group = _map(input);
+          final token = _string(group['resolveToken']);
+          for (final input in _list(group['events'])) {
+            final event = _map(input);
+            final status = _map(event['status']);
+            if (status.length != 1 || _map(status.values.single).isNotEmpty) {
+              _invalid();
+            }
+            add(
+              token,
+              _string(event['name']),
+              event['applyTime'],
+              status.keys.single,
+            );
+          }
+        }
+      } else {
+        for (final group in root.entries) {
+          for (final entry in _map(group.value).entries) {
+            final event = _map(entry.value);
+            final status = switch (event['eventStatus']) {
+              'CREATED' => 'created',
+              'SENDING' => 'sending',
+              'SENT' => 'sent',
+              _ => _invalid(),
+            };
+            add(group.key, entry.key, event['time'], status);
+          }
+        }
+      }
+      return List.unmodifiable(records);
+    } on FormatException {
+      throw const FormatException('Invalid legacy apply cache.');
+    } on ArgumentError {
+      throw const FormatException('Invalid legacy apply cache.');
+    }
+  }
+
+  /// Both native writers store one compact JSON object per line, with escaped
+  /// newlines inside strings. Android appends a comma; Swift prefixes a newline.
+  /// This also accepts complete final records in unfinished files.
+  LegacyEventBatch decodeEvents(String source) {
+    final events = <LegacyEvent>[];
+    final rejected = <int>[];
+    final lines = const LineSplitter().convert(source);
+    for (var index = 0; index < lines.length; index++) {
+      var line = lines[index].trim();
+      if (line.isEmpty) continue;
+      if (!_swift && line.endsWith(',')) {
+        line = line.substring(0, line.length - 1);
+      }
+      try {
+        final event = _map(jsonDecode(line));
+        events.add(
+          LegacyEvent(
+            sourceLine: index + 1,
+            name: _string(event[_swift ? 'name' : 'eventDefinition']),
+            time: _timestamp(event['eventTime']),
+            payload: _values(event['payload']),
+          ),
+        );
+      } on FormatException {
+        rejected.add(index + 1);
+      } on ArgumentError {
+        rejected.add(index + 1);
+      }
+    }
+    return LegacyEventBatch(events, rejected);
+  }
+
+  DateTime _timestamp(Object? value) =>
+      _swift ? _swiftTimestamp(value) : _androidTimestamp(value);
+
+  FlagSnapshot decodeFlags(String source) {
     try {
       final root = _map(jsonDecode(source));
       final flags = <String, ResolvedFlag>{};

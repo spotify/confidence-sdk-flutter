@@ -30,6 +30,9 @@ These are serializer fixtures, not full migration or mobile path tests. Visitor
 preference files, older SDK versions, interrupted migration, and corrupt/truncated
 multi-record batches are still outstanding. Sealed and unfinished fixtures each
 contain one valid record; they do not demonstrate damaged-record recovery.
+The Dart queue-reader tests additionally compose these records into multi-record
+inputs with corrupt lines and truncated tails, verifying recovery of the valid
+records. These are synthetic damage tests, not native crash/upgrade evidence.
 
 ## Reproduce
 

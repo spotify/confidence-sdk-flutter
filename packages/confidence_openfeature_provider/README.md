@@ -3,7 +3,7 @@
 This independent package is the first implementation increment of the
 [Dart provider plan](../../docs/dart-client-provider-plan.md). It currently
 contains configuration, endpoint routing, read-only legacy storage access,
-and immutable snapshots with native flag-cache decoders.
+and immutable snapshots with native flag/apply/event decoders.
 It does **not** yet provide a usable Confidence provider or migrate device data.
 Publication is disabled until the migration and mobile release gates pass.
 
