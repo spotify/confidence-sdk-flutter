@@ -22,5 +22,7 @@ jobs:
           xcrun simctl bootstatus "$simulator" -b
       - run: flutter pub get
         working-directory: ${{ runner.temp }}/confidence_openfeature_provider/example
-      - run: flutter test integration_test/mobile_test.dart -d '${{ steps.simulator.outputs.udid }}' --verbose
+      # Flutter can miss the simulator's VM Service startup log (#181771).
+      # Retry only discovery hangs, never test failures.
+      - run: python3 "$GITHUB_WORKSPACE/.github/scripts/run-ios-integration.py" flutter test integration_test/mobile_test.dart -d '${{ steps.simulator.outputs.udid }}' --verbose
         working-directory: ${{ runner.temp }}/confidence_openfeature_provider/example
