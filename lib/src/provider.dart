@@ -22,8 +22,8 @@ import 'transport.dart';
 final class ConfidenceProviderBuilder {
   /// Pass the Confidence flag client's client secret as [clientSecret].
   // Keep the credential field private while preserving the named API argument.
-  // ignore: prefer_initializing_formals
   ConfidenceProviderBuilder({required String clientSecret})
+    // ignore: prefer_initializing_formals
     : _clientSecret = clientSecret;
   final String _clientSecret;
   ConfidenceRegion _region = ConfidenceRegion.global;
