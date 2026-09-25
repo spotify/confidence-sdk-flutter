@@ -1,43 +1,30 @@
-name: Test-Android
+name: Android integration
 on:
   push:
-    branches:
-      - 'main'
+    branches: [main]
   pull_request:
-    branches:
-      - '*'
 jobs:
-  android-test:
+  test:
     runs-on: ubuntu-latest
-
-    env:
-      FLUTTER_CHANNEL: stable
-      FLUTTER_VERSION: 3.27.3
-
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v6
+      - uses: actions/setup-java@v5
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: ${{ env.FLUTTER_CHANNEL }}
-
-      # This step enables KVM (Kernel-based Virtual Machine).
-      # KVM is a virtualization module in the Linux kernel that allows the
-      # kernel to function as a hypervisor. This is necessary for running
-      # virtual machines on the host system.
+          java-version: '17'
+          distribution: zulu
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-
-      - name: run android tests
-        uses: reactivecircus/android-emulator-runner@v2
+      - run: flutter pub get
+        working-directory: example
+      - uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 29
-          script: cd example && flutter drive --driver=test_drive/integration_test.dart --target=test/widget_test.dart
+          api-level: 36
+          arch: x86_64
+          script: cd example && flutter test integration_test/mobile_test.dart --verbose

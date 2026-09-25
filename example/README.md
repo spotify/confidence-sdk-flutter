@@ -1,16 +1,13 @@
-# confidence_flutter_sdk_example
+# Confidence OpenFeature example
 
-Demonstrates how to use the confidence_flutter_sdk plugin.
+From this directory run `flutter pub get`, then `flutter run` with an approved
+mobile flag-client key and boolean property path:
 
-## Getting Started
+```sh
+flutter run --dart-define=CONFIDENCE_API_KEY=... --dart-define=FLAG_KEY=example.enabled
+```
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Without a key, the app displays setup instructions and makes no network requests.
+The example retains its old Android/iOS application IDs to allow same-app upgrade
+checks. It uses only the new provider and Flutter utilities; no old bridge or native
+Confidence SDK is linked. See [migration](../doc/migration.md) for the full contract.

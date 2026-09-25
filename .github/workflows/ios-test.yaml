@@ -1,90 +1,26 @@
-name: Test-iOS
+name: iOS integration
 on:
   push:
-    branches:
-      - 'main'
+    branches: [main]
   pull_request:
-    branches:
-      - '*'
 jobs:
-  ios-test:
+  test:
     runs-on: macos-latest
-    timeout-minutes: 45
-
-    env:
-      FLUTTER_CHANNEL: stable
-      FLUTTER_VERSION: 3.44.0
-
+    timeout-minutes: 30
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: fetch submodules
-        run: git submodule update --init --recursive
-
-      - name: Copy iOS
-        working-directory: ios/Classes
-        run: cp -r confidence-sdk/Sources/Confidence .
-
-      - name: Remove the submodule
-        working-directory: ios/Classes
-        run: rm -rf confidence-sdk
-
-      - name: Remove git submodule
-        working-directory: ios/Classes
-        run: git rm confidence-sdk
-
-      - name: Select iOS simulator
+      - uses: actions/checkout@v6
+      - name: Stage package without Git identity overrides
+        run: python3 tool/stage_package.py "$RUNNER_TEMP/confidence_openfeature_provider"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.2'
+      - name: Select simulator
         id: simulator
         run: |
-          SIMULATOR=$(xcrun simctl list devices available -j | python3 .github/scripts/find-simulator.py iOS)
-          echo "udid=$SIMULATOR" >> "$GITHUB_OUTPUT"
-          echo "Using simulator: $SIMULATOR"
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: ${{ env.FLUTTER_CHANNEL }}
-
-      - run: echo API_KEY=${{ secrets.TEST_API_KEY }} > example/.env
-      - name: Boot iOS simulator and wait until it is ready
-        run: |
-          # `simctl boot` returns as soon as boot is *initiated*, not when the
-          # device is usable, so booting inline let `flutter test` race the Dart
-          # VM debug connection against a still-booting simulator. When it lost
-          # that race the app built, installed and launched but the harness
-          # never attached, so the job sat silent until the 30 minute timeout
-          # with "No tests ran." and "Error waiting for a debug connection".
-          #
-          # Measured locally: `boot` returned after 2s while the device needed
-          # 3s more warm and 17s more cold, most of it "Waiting on Data
-          # Migration". `bootstatus -b` boots if needed and blocks until the
-          # device reports Finished. It also exits non-zero for an invalid
-          # device, so a boot failure fails here instead of masquerading as a
-          # test timeout further down.
-          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
-
-      - name: Configure Flutter to use CocoaPods
-        run: flutter config --no-enable-swift-package-manager
-
-      # `flutter test` intermittently fails to attach to the Dart VM on a cold
-      # runner: the app builds, installs and launches, but the harness never
-      # connects and the step sits silent until it is killed, reporting
-      # "No tests ran." and "Error waiting for a debug connection: The log
-      # reader failed unexpectedly". Booting the simulator to readiness first
-      # (see the step above) did not stop it, so this is an attach race rather
-      # than a boot race.
-      #
-      # It is intermittent, not deterministic — the same commit passes on some
-      # runs and stalls on others — and a second attempt, with the app already
-      # built and the simulator already warm, has consistently succeeded. Two
-      # bounded attempts fit inside the job's 45 minute budget, whereas the
-      # previous single 30 minute attempt burned almost the whole budget before
-      # failing.
-      - name: Run iOS integration tests
-        uses: nick-fields/retry@v3
-        with:
-          timeout_minutes: 13
-          max_attempts: 2
-          command: cd example && flutter test -d "${{ steps.simulator.outputs.udid }}" integration_test/widget_test.dart
+          simulator=$(xcrun simctl list devices available -j | python3 .github/scripts/find-simulator.py iOS)
+          echo "udid=$simulator" >> "$GITHUB_OUTPUT"
+          xcrun simctl bootstatus "$simulator" -b
+      - run: flutter pub get
+        working-directory: ${{ runner.temp }}/confidence_openfeature_provider/example
+      - run: flutter test integration_test/mobile_test.dart -d '${{ steps.simulator.outputs.udid }}' --verbose
+        working-directory: ${{ runner.temp }}/confidence_openfeature_provider/example

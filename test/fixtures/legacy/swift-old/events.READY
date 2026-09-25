@@ -1,0 +1,2 @@
+
+{"eventTime":721692800,"name":"checkout","payload":{"count":{"integer":{"_0":7}},"enabled":{"boolean":{"_0":true}},"label":{"string":{"_0":"hello\nworld"}},"nested":{"structure":{"_0":{"items":{"list":{"_0":[{"integer":{"_0":1}},{"integer":{"_0":2}}]}}}}},"optional":{"null":{}},"ratio":{"double":{"_0":0.5}},"targeting_key":{"string":{"_0":"user-a"}},"timestamp":{"timestamp":{"_0":721692800}},"visitor_id":{"string":{"_0":"fixture-visitor"}}}}
