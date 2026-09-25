@@ -40,6 +40,22 @@ the `example` flag; `example.banner.title` reads a nested property. The first
 component is the flag name, followed by the property path. Choose the typed read
 that matches the property's type.
 
+To read the complete flag object, pass just the flag name:
+
+```dart
+final details = client.getStructureDetails('example', {});
+// For a matching variant with {"enabled": true}:
+// details.value == {'enabled': true}
+// details.variant == 'flags/example/variants/enabled'
+// details.reason == 'TARGETING_MATCH'
+// details.errorCode == null
+```
+
+Use `get*Details` to inspect `errorCode`, `reason`, `variant`, and `flagMetadata`.
+A missing flag or type mismatch returns the caller's fallback with error details
+rather than throwing. `get*Value` returns only the value, so it cannot distinguish
+an evaluation error from a successful assignment equal to the fallback.
+
 `EvaluationContext(targetingKey: userId)` sends `targeting_key`; it does **not**
 populate `user_id`. If your Confidence rules use `User(user_id)`, also supply
 `attributes: {'user_id': userId}`. Attribute names must match your flag's targeting

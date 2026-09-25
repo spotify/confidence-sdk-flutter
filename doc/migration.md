@@ -55,11 +55,24 @@ Read keys use `flag.property` dot notation: `example.enabled` selects the
 `enabled` property on flag `example`. Nested properties use additional dots, such
 as `example.banner.title`. Use the read method matching the property's type.
 
+For the complete flag object, omit the property path:
+
+```dart
+final details = client.getStructureDetails('example', {});
+// details.value contains the complete object, for example {'enabled': true}.
+// Check details.errorCode before treating that value as a successful read.
+```
+
 Reads are synchronous and typed. Wrong types, missing properties, and wrong
 contexts return the caller's fallback with error details; they do not enqueue
 exposures. Use `getBooleanDetails` and corresponding typed detail methods to
 inspect errors/reasons/variants. Valid backend-directed defaults can report an
 exposure. Integers and doubles remain distinct.
+
+Evaluation failures are returned in details rather than thrown. `get*Value`
+returns only the value and cannot distinguish an error from a successful
+assignment equal to the caller's fallback; use `get*Details` when that distinction
+matters.
 
 ## Context and startup
 
