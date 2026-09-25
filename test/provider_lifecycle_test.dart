@@ -24,7 +24,7 @@ void main() {
     bool background = false,
   }) {
     final config = ConfidenceConfiguration(
-      apiKey: 'test',
+      clientSecret: 'test',
       loggingLevel: ConfidenceLoggingLevel.none,
       initializationStrategy: background
           ? InitializationStrategy.activateAndFetchAsync

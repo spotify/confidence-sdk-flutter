@@ -20,10 +20,12 @@ import 'telemetry_delivery.dart';
 import 'transport.dart';
 
 final class ConfidenceProviderBuilder {
+  /// Pass the Confidence flag client's client secret as [clientSecret].
   // Keep the credential field private while preserving the named API argument.
   // ignore: prefer_initializing_formals
-  ConfidenceProviderBuilder({required String apiKey}) : _apiKey = apiKey;
-  final String _apiKey;
+  ConfidenceProviderBuilder({required String clientSecret})
+    : _clientSecret = clientSecret;
+  final String _clientSecret;
   ConfidenceRegion _region = ConfidenceRegion.global;
   ConfidenceLoggingLevel _logging = ConfidenceLoggingLevel.warn;
   InitializationStrategy _strategy = InitializationStrategy.fetchAndActivate;
@@ -54,7 +56,7 @@ final class ConfidenceProviderBuilder {
   /// Construction performs no network, disk, or plugin work.
   ConfidenceProvider build() {
     final configuration = ConfidenceConfiguration(
-      apiKey: _apiKey,
+      clientSecret: _clientSecret,
       region: _region,
       loggingLevel: _logging,
       initializationStrategy: _strategy,
@@ -417,7 +419,7 @@ Future<ProviderResources> _mobileResources(
         .convert(
           utf8.encode(
             jsonEncode([
-              config.apiKey,
+              config.clientSecret,
               config.region.name,
               config.resolveBaseUrl?.toString(),
               domain,

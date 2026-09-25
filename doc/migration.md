@@ -8,28 +8,35 @@ client SDK to `0.0.1-beta.1`. It supports Flutter Android and iOS.
 ## Replace setup and reads
 
 Initialize Flutter bindings before registering the provider, and set the initial
-context before registration so the first fetch uses the right identity:
+context before registration so the first fetch uses the right identity. In the
+pinned Dart OpenFeature SDK (`0.0.1-beta.1`), `setProvider(provider)` and
+`setProviderAndWait(provider)` have no initial-context argument. Unlike Swift's
+`setProvider(provider:initialContext:)`, Dart takes the context already set on the
+API. Registering first is allowed, but the first fetch then uses the existing
+context (empty if none has been set):
 
 ```dart
 import 'package:confidence_openfeature_provider/confidence_openfeature_provider.dart';
 import 'package:flutter/widgets.dart';
 import 'package:openfeature_dart_client_sdk/openfeature_dart_client_sdk.dart';
 
-Future<void> configureFlags(String flagClientKey, String userId) async {
+Future<void> configureFlags(String clientSecret, String userId) async {
   WidgetsFlutterBinding.ensureInitialized();
-  final provider = ConfidenceProviderBuilder(apiKey: flagClientKey)
+  final provider = ConfidenceProviderBuilder(clientSecret: clientSecret)
       .withRegion(ConfidenceRegion.eu)
       .withInitializationStrategy(InitializationStrategy.fetchAndActivate)
       .build();
   final api = OpenFeatureAPI.instance;
-  await api.setEvaluationContextAndWait(EvaluationContext(targetingKey: userId));
+  await api.setEvaluationContextAndWait(
+    EvaluationContext(targetingKey: userId, attributes: {'user_id': userId}),
+  );
   await api.setProviderAndWait(provider);
   final enabled = api.getClient().getBooleanValue('example.enabled', false);
 }
 ```
 
-Use your existing region and flag-client key. A resolver override is configured
-with `withResolveBaseUrl(Uri.parse(...))`; it affects resolve and apply only.
+Use your existing region and Confidence client secret. A resolver override is
+configured with `withResolveBaseUrl(Uri.parse(...))`; it affects resolve and apply only.
 Events use the selected region's event service.
 
 | Old bridge | OpenFeature provider |
@@ -44,6 +51,10 @@ Events use the selected region's event service.
 | fire-and-forget `flush` | `await provider.flush()`; inspect its result |
 | `isStorageEmpty` | `await provider.inspectStorage()` for queue/cache counts |
 
+Read keys use `flag.property` dot notation: `example.enabled` selects the
+`enabled` property on flag `example`. Nested properties use additional dots, such
+as `example.banner.title`. Use the read method matching the property's type.
+
 Reads are synchronous and typed. Wrong types, missing properties, and wrong
 contexts return the caller's fallback with error details; they do not enqueue
 exposures. Use `getBooleanDetails` and corresponding typed detail methods to
@@ -52,18 +63,34 @@ exposure. Integers and doubles remain distinct.
 
 ## Context and startup
 
-`EvaluationContext.targetingKey` maps to `targeting_key`. The migrated/generated
+`EvaluationContext.targetingKey` maps to `targeting_key`, not `user_id`. When
+rules target `User(user_id)`, supply `user_id` explicitly in `attributes`; the
+provider does not infer entity fields from the targeting key. The migrated/generated
 `visitor_id` is included automatically unless the context explicitly overrides it.
 On login, account switch, or sign-out, replace the context rather than retaining
 stale user attributes:
 
 ```dart
 await OpenFeatureAPI.instance.setEvaluationContextAndWait(
-  EvaluationContext(targetingKey: nextUserId, attributes: {'country': country}),
+  EvaluationContext(
+    targetingKey: nextUserId,
+    attributes: {'user_id': nextUserId, 'country': country},
+  ),
 );
 // For sign-out:
 await OpenFeatureAPI.instance.setEvaluationContextAndWait(EvaluationContext.empty);
 ```
+
+Show a loading state while awaiting registration and handle initialization
+errors before reading flags. The [example](../example/lib/main.dart) starts the
+Flutter UI immediately, shows progress, then renders either the evaluated feature
+or a generic error without displaying credentials or raw exceptions. Offline
+fallback can initialize successfully with cached assignments/defaults, so a ready
+provider does not by itself prove that a fresh fetch succeeded. Use evaluation
+details to distinguish successful reads from caller fallbacks.
+
+For Android release builds, include the `INTERNET` permission in the main app
+manifest; see [application setup](../README.md#toolchain-and-application-setup).
 
 Fetch-and-activate startup uses a fresh fetch when possible; offline it uses a
 matching cached snapshot or defaults. Corrupt caches are discarded. Assignments

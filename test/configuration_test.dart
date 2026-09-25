@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 
 void main() {
   test('defaults match the agreed startup contract', () {
-    final configuration = ConfidenceConfiguration(apiKey: 'test-key');
+    final configuration = ConfidenceConfiguration(clientSecret: 'test-key');
     expect(configuration.region, ConfidenceRegion.global);
     expect(configuration.loggingLevel, ConfidenceLoggingLevel.warn);
     expect(
@@ -16,7 +16,7 @@ void main() {
 
   test('explicit startup and disabled logging are retained', () {
     final configuration = ConfidenceConfiguration(
-      apiKey: 'test-key',
+      clientSecret: 'test-key',
       loggingLevel: ConfidenceLoggingLevel.none,
       initializationStrategy: InitializationStrategy.activateAndFetchAsync,
     );
@@ -29,7 +29,10 @@ void main() {
 
   for (final key in ['', ' \n\t']) {
     test('rejects an empty credential', () {
-      expect(() => ConfidenceConfiguration(apiKey: key), throwsArgumentError);
+      expect(
+        () => ConfidenceConfiguration(clientSecret: key),
+        throwsArgumentError,
+      );
     });
   }
 
@@ -40,7 +43,7 @@ void main() {
   }.entries) {
     test('${entry.key.name} routes all three services', () {
       final endpoints = ConfidenceEndpoints(
-        ConfidenceConfiguration(apiKey: 'test-key', region: entry.key),
+        ConfidenceConfiguration(clientSecret: 'test-key', region: entry.key),
       );
       final resolver = 'https://resolver${entry.value}.confidence.dev';
       expect(endpoints.resolve.toString(), '$resolver/v1/flags:resolve');
@@ -55,7 +58,7 @@ void main() {
       test('${entry.key.name} resolver override with suffix "$suffix"', () {
         final endpoints = ConfidenceEndpoints(
           ConfidenceConfiguration(
-            apiKey: 'test-key',
+            clientSecret: 'test-key',
             region: entry.key,
             resolveBaseUrl: Uri.parse('http://localhost:8080/proxy$suffix'),
           ),
@@ -87,7 +90,7 @@ void main() {
     test('rejects invalid resolver URL without including its contents', () {
       expect(
         () => ConfidenceConfiguration(
-          apiKey: 'private-key',
+          clientSecret: 'private-key',
           resolveBaseUrl: Uri.parse(url),
         ),
         throwsA(

@@ -37,7 +37,7 @@ void main() {
         final directory = Directory('${root.path}/dart');
         final transport = UpgradeTransport();
         final config = ConfidenceConfiguration(
-          apiKey: 'test',
+          clientSecret: 'test',
           loggingLevel: ConfidenceLoggingLevel.none,
         );
         ConfidenceProvider create() => createConfidenceProvider(

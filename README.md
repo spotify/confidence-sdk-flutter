@@ -17,6 +17,46 @@ iOS Foundation helper preserves legacy calendar-date conversion during replay.
 See the [mobile storage probe](tool/mobile_storage_probe/README.md) for the
 verified dependency set and platform checks.
 
+### Toolchain and application setup
+
+The Dart 3.12.2 minimum comes from the published
+`openfeature_dart_client_sdk` 0.0.1-beta.1 SDK constraint. Flutter 3.44.2 is the
+verified toolchain used for our mobile builds and CI; we have not established a
+lower compatible Flutter version. Lowering our Dart constraint alone would not
+make the pinned OpenFeature dependency work on older Dart SDKs.
+
+Use a Confidence **client secret**, matching the terminology of the
+[Android](https://github.com/spotify/confidence-sdk-android#usage) and
+[Swift](https://github.com/spotify/confidence-sdk-swift#create-and-set-the-provider)
+SDKs. Pass the client secret for your application's Confidence flag client to
+`ConfidenceProviderBuilder(clientSecret: clientSecret)`. This is not a Confidence
+management API/OAuth credential.
+This mobile SDK uses that client secret in the app. Values supplied through
+`--dart-define` are compiled into the binary and can be extracted; this is not a
+way to keep a credential confidential.
+
+Flag reads use dot notation: `example.enabled` reads the `enabled` property of
+the `example` flag; `example.banner.title` reads a nested property. The first
+component is the flag name, followed by the property path. Choose the typed read
+that matches the property's type.
+
+`EvaluationContext(targetingKey: userId)` sends `targeting_key`; it does **not**
+populate `user_id`. If your Confidence rules use `User(user_id)`, also supply
+`attributes: {'user_id': userId}`. Attribute names must match your flag's targeting
+configuration.
+
+On Android, add network permission to your application's
+`android/app/src/main/AndroidManifest.xml`, inside `<manifest>` and outside
+`<application>`, so release builds can connect too:
+
+```xml
+<uses-permission android:name="android.permission.INTERNET" />
+```
+
+Flutter's debug/profile manifest permissions alone do not cover release builds.
+The example already includes this permission. See Flutter's
+[networking instructions](https://docs.flutter.dev/data-and-backend/networking).
+
 See the [migration guide](doc/migration.md) and [public-API example](example/lib/main.dart)
 for application setup and the breaking changes from the old bridge.
 

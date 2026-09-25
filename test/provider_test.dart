@@ -14,7 +14,7 @@ void main() {
   late Directory root;
   late ProviderStorage storage;
   final configuration = ConfidenceConfiguration(
-    apiKey: 'test',
+    clientSecret: 'test',
     loggingLevel: ConfidenceLoggingLevel.none,
   );
   setUp(() async {
@@ -39,7 +39,7 @@ void main() {
   test(
     'builder validates configuration without any plugin or network access',
     () {
-      final built = ConfidenceProviderBuilder(apiKey: 'test')
+      final built = ConfidenceProviderBuilder(clientSecret: 'test')
           .withRegion(ConfidenceRegion.eu)
           .withLoggingLevel(ConfidenceLoggingLevel.none)
           .withResolveBaseUrl(Uri.parse('https://example.test/proxy'))
@@ -55,7 +55,7 @@ void main() {
         ErrorCode.providerNotReady,
       );
       expect(
-        () => ConfidenceProviderBuilder(apiKey: '').build(),
+        () => ConfidenceProviderBuilder(clientSecret: '').build(),
         throwsArgumentError,
       );
       addTearDown(built.shutdown);

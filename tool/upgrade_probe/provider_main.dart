@@ -27,7 +27,7 @@ Future<void> main() async {
     final transport = OfflineThenOnline();
     final provider = createConfidenceProvider(
       ConfidenceConfiguration(
-        apiKey: 'synthetic-upgrade-client',
+        clientSecret: 'synthetic-upgrade-client',
         loggingLevel: ConfidenceLoggingLevel.none,
       ),
       transport: transport,

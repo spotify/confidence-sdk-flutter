@@ -27,7 +27,7 @@ void main() {
         final storage = ProviderStorage(root);
         final transport = StatusTransport();
         final config = ConfidenceConfiguration(
-          apiKey: secret,
+          clientSecret: secret,
           loggingLevel: ConfidenceLoggingLevel.none,
         );
         final provider = createConfidenceProvider(

@@ -13,19 +13,19 @@ enum InitializationStrategy { fetchAndActivate, activateAndFetchAsync }
 /// until the builder can construct a functional provider.
 final class ConfidenceConfiguration {
   ConfidenceConfiguration({
-    required this.apiKey,
+    required this.clientSecret,
     this.region = ConfidenceRegion.global,
     this.loggingLevel = ConfidenceLoggingLevel.warn,
     this.initializationStrategy = InitializationStrategy.fetchAndActivate,
     Uri? resolveBaseUrl,
   }) : resolveBaseUrl = _validateBaseUrl(resolveBaseUrl) {
-    if (apiKey.trim().isEmpty) {
+    if (clientSecret.trim().isEmpty) {
       // Do not include credential values in validation messages.
-      throw ArgumentError('A non-empty API key is required.');
+      throw ArgumentError('A non-empty client secret is required.');
     }
   }
 
-  final String apiKey;
+  final String clientSecret;
   final ConfidenceRegion region;
   final ConfidenceLoggingLevel loggingLevel;
   final InitializationStrategy initializationStrategy;

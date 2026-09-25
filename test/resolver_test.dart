@@ -128,7 +128,7 @@ void main() {
         final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
         final resolver = ConfidenceResolver(
           ConfidenceConfiguration(
-            apiKey: 'test-secret',
+            clientSecret: 'test-secret',
             resolveBaseUrl: Uri.parse('http://127.0.0.1:${server.port}/proxy'),
           ),
           isIOS: isIOS,
@@ -169,7 +169,7 @@ void main() {
     () async {
       for (final status in [200, 401, 429, 500]) {
         final resolver = ConfidenceResolver(
-          ConfidenceConfiguration(apiKey: 'secret'),
+          ConfidenceConfiguration(clientSecret: 'secret'),
           isIOS: false,
           transport: StubTransport(WireResponse(status, 'private-data')),
         );

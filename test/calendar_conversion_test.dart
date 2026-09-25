@@ -122,7 +122,7 @@ void main() {
         storage,
         buffer,
         ConfidenceResolver(
-          ConfidenceConfiguration(apiKey: 'test'),
+          ConfidenceConfiguration(clientSecret: 'test'),
           isIOS: true,
           transport: transport,
         ),

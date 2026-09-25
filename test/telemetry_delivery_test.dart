@@ -38,7 +38,7 @@ void main() {
     queue,
     ConfidenceResolver(
       ConfidenceConfiguration(
-        apiKey: 'secret',
+        clientSecret: 'secret',
         region: ConfidenceRegion.eu,
         resolveBaseUrl: Uri.parse('https://proxy.test/base'),
       ),
@@ -256,7 +256,7 @@ void main() {
       storage,
       buffer,
       ConfidenceResolver(
-        ConfidenceConfiguration(apiKey: 'test'),
+        ConfidenceConfiguration(clientSecret: 'test'),
         isIOS: false,
         transport: transport,
       ),

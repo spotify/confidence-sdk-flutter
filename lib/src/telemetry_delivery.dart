@@ -232,7 +232,7 @@ final class TelemetryDelivery {
   }) async {
     try {
       final response = await resolver.transport.post(uri, {
-        'clientSecret': resolver.configuration.apiKey,
+        'clientSecret': resolver.configuration.clientSecret,
         'sdk': resolver.sdk,
         'sendTime': _now().toUtc().toIso8601String(),
         ...fields,

@@ -13,7 +13,7 @@ void main() {
     await app.main();
     await tester.pumpAndSettle();
     expect(
-      find.text('Set CONFIDENCE_API_KEY to run this example.'),
+      find.text('Set CONFIDENCE_CLIENT_SECRET to run this example.'),
       findsOneWidget,
     );
   });

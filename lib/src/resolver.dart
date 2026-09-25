@@ -28,7 +28,7 @@ final class ConfidenceResolver {
   Future<FlagSnapshot> resolve(Map<String, Object?> context) async {
     final frozen = freezeValue(context) as Map<String, Object?>;
     final response = await transport.post(endpoints.resolve, {
-      'clientSecret': configuration.apiKey,
+      'clientSecret': configuration.clientSecret,
       'evaluationContext': wireValue(frozen),
       'flags': <String>[],
       'apply': false,
