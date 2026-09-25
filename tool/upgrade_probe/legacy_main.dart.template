@@ -1,0 +1,58 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:confidence_flutter_sdk/confidence_flutter_sdk_platform_interface.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
+import 'package:path_provider/path_provider.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final support = await getApplicationSupportDirectory();
+  final report = File('${support.path}/legacy-result.json');
+  try {
+    final platform = Platform.isIOS ? 'swift' : 'android';
+    Future<String> asset(String name) =>
+        rootBundle.loadString('assets/$platform/$name');
+    var flagData = await asset('flags.json');
+    if (Platform.isAndroid) {
+      // The old Flutter bridge cannot flatten timestamp-valued flags (which
+      // backend flag schemas do not produce). Keep timestamps in event fixtures.
+      final decoded = jsonDecode(flagData) as Map<String, dynamic>;
+      ((decoded['flags'] as List<dynamic>).first['value']
+              as Map<String, dynamic>)
+          .remove('timestamp');
+      flagData = jsonEncode(decoded);
+    }
+    final paths = await const MethodChannel('confidence.upgrade-probe')
+        .invokeMapMethod<String, String>('seed', {
+          'flags': flagData,
+          'apply': await asset('apply.json'),
+          'sealed': await asset(
+            Platform.isIOS ? 'events.READY' : 'events.ready',
+          ),
+          'unfinished': await asset('events-unfinished'),
+        });
+    // Exercise the actual published bridge and native deserializer, without
+    // initializing network clients or sending synthetic data to production.
+    final flags = await ConfidenceFlutterSdkPlatform.instance.readAllFlags();
+    if ((flags['example'] as Map<String, Object?>)['enabled'] != true) {
+      throw StateError('Legacy bridge did not read its cached flag.');
+    }
+    await report.writeAsString(
+      jsonEncode({'ok': true, 'paths': paths}),
+      flush: true,
+    );
+  } catch (error) {
+    await report.writeAsString(
+      jsonEncode({'ok': false, 'error': '$error'}),
+      flush: true,
+    );
+  }
+  runApp(
+    const Directionality(
+      textDirection: TextDirection.ltr,
+      child: Text('Legacy upgrade seed ready'),
+    ),
+  );
+}

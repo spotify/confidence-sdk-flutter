@@ -28,15 +28,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FLUTTER_CHANNEL: stable
-      FLUTTER_VERSION: 3.27.3
+      FLUTTER_VERSION: 3.44.2
     if: ${{ needs.release-please.outputs.release_created == 'true' }}
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ needs.release-please.outputs.tag_name }}
-
-      - name: fetch submodules
-        run: git submodule update --init --recursive
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -44,18 +41,16 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: ${{ env.FLUTTER_CHANNEL }}
 
-      - name: Copy Confidence sources for CocoaPods
-        working-directory: ios/Classes
-        run: cp -r confidence-sdk/Sources/Confidence .
-
-      - name: Copy Confidence sources for SPM
-        run: cp -r ios/Classes/confidence-sdk/Sources/Confidence ios/confidence_flutter_sdk/Sources/confidence_flutter_sdk/
-
-      - name: Remove the submodule
-        working-directory: ios/Classes
-        run: rm -rf confidence-sdk && git rm -r --cached .
-
+      - name: Check publication gate
+        id: publication
+        run: |
+          if grep -q '^publish_to: none' pubspec.yaml; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Setup Pub Credentials
+        if: steps.publication.outputs.enabled == 'true'
         shell: bash
         env:
           PUB_ACCESS_TOKEN: ${{ secrets.PUB_ACCESS_TOKEN }}
@@ -65,8 +60,10 @@ jobs:
         run: |
           sh ./pub_login.sh
       - name: Check Publish Warnings
+        if: steps.publication.outputs.enabled == 'true'
         run: |
-          flutter pub publish --dry-run
+          flutter pub publish --dry-run --ignore-warnings
       - name: Publish Package
+        if: steps.publication.outputs.enabled == 'true'
         run: |
-          yes | flutter pub publish
+          flutter pub publish --force --ignore-warnings

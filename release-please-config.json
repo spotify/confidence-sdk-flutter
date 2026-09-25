@@ -1,69 +1,77 @@
 {
-    "bootstrap-sha": "dc5df53f309d42398b9ee069da72ac0b74a21ab4",
-    "packages": {
-        ".": {
-            "release-type": "dart",
-            "bump-minor-pre-major": true,
-            "bump-patch-for-minor-pre-major": true,
-            "versioning": "default",
-            "include-v-in-tag": false,
-            "commit-search-depth": 1000
+  "bootstrap-sha": "dc5df53f309d42398b9ee069da72ac0b74a21ab4",
+  "packages": {
+    ".": {
+      "release-type": "dart",
+      "bump-minor-pre-major": true,
+      "bump-patch-for-minor-pre-major": true,
+      "versioning": "default",
+      "include-v-in-tag": false,
+      "commit-search-depth": 1000,
+      "component": "confidence_openfeature_provider",
+      "include-component-in-tag": true,
+      "extra-files": [
+        {
+          "type": "generic",
+          "path": "lib/src/resolver.dart"
         }
+      ]
+    }
+  },
+  "changelog-sections": [
+    {
+      "type": "fix",
+      "section": "\ud83d\udc1b Bug Fixes"
     },
-    "changelog-sections": [
-        {
-            "type": "fix",
-            "section": "🐛 Bug Fixes"
-        },
-        {
-            "type": "feat",
-            "section": "✨ New Features"
-        },
-        {
-            "type": "chore",
-            "section": "🧹 Chore"
-        },
-        {
-            "type": "docs",
-            "section": "📚 Documentation"
-        },
-        {
-            "type": "perf",
-            "section": "🚀 Performance"
-        },
-        {
-            "type": "build",
-            "hidden": true,
-            "section": "🛠️ Build"
-        },
-        {
-            "type": "deps",
-            "section": "📦 Dependencies"
-        },
-        {
-            "type": "ci",
-            "hidden": true,
-            "section": "🚦 CI"
-        },
-        {
-            "type": "refactor",
-            "section": "🔄 Refactoring"
-        },
-        {
-            "type": "revert",
-            "section": "🔙 Reverts"
-        },
-        {
-            "type": "style",
-            "hidden": true,
-            "section": "🎨 Styling"
-        },
-        {
-            "type": "test",
-            "hidden": true,
-            "section": "🧪 Tests"
-        }
-    ],
-    "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+    {
+      "type": "feat",
+      "section": "\u2728 New Features"
+    },
+    {
+      "type": "chore",
+      "section": "\ud83e\uddf9 Chore"
+    },
+    {
+      "type": "docs",
+      "section": "\ud83d\udcda Documentation"
+    },
+    {
+      "type": "perf",
+      "section": "\ud83d\ude80 Performance"
+    },
+    {
+      "type": "build",
+      "hidden": true,
+      "section": "\ud83d\udee0\ufe0f Build"
+    },
+    {
+      "type": "deps",
+      "section": "\ud83d\udce6 Dependencies"
+    },
+    {
+      "type": "ci",
+      "hidden": true,
+      "section": "\ud83d\udea6 CI"
+    },
+    {
+      "type": "refactor",
+      "section": "\ud83d\udd04 Refactoring"
+    },
+    {
+      "type": "revert",
+      "section": "\ud83d\udd19 Reverts"
+    },
+    {
+      "type": "style",
+      "hidden": true,
+      "section": "\ud83c\udfa8 Styling"
+    },
+    {
+      "type": "test",
+      "hidden": true,
+      "section": "\ud83e\uddea Tests"
+    }
+  ],
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "draft-pull-request": true
 }
-

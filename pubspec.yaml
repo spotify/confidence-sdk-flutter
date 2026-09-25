@@ -1,45 +1,35 @@
-name: confidence_flutter_sdk
-description: "Flutter implementation of the Confidence SDK."
-version: 0.2.4
-homepage: https://confidence.spotify.com
-
-platforms:
-  android:
-  ios:
+name: confidence_openfeature_provider
+description: Dart-native Confidence provider for the OpenFeature client SDK.
+version: 0.0.1-dev.1
+publish_to: none
+repository: https://github.com/spotify/confidence-sdk-flutter
 
 environment:
-  sdk: '>=3.4.3 <4.0.0'
-  flutter: '>=3.3.0'
+  sdk: ^3.12.2
+  flutter: '>=3.44.2'
 
 dependencies:
+  crypto: ^3.0.6
   flutter:
     sdk: flutter
-  plugin_platform_interface: ^2.0.2
+  openfeature_dart_client_sdk: 0.0.1-beta.1
+  path: ^1.9.1
+  # Verified together on Flutter 3.44.2; see tool/mobile_storage_probe/README.md.
+  package_info_plus: 8.3.1
+  path_provider: 2.1.5
+  shared_preferences: 2.5.3
+  shared_preferences_android: 2.4.11
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  integration_test:
+    sdk: flutter
+  lints: ^6.0.0
+  test: ^1.26.3
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
-  # This section identifies this Flutter project as a plugin project.
-  # The 'pluginClass' specifies the class (in Java, Kotlin, Swift, Objective-C, etc.)
-  # which should be registered in the plugin registry. This is required for
-  # using method channels.
-  # The Android 'package' specifies package in which the registered class is.
-  # This is required for using method channels on Android.
-  # The 'ffiPlugin' specifies that native code should be built and bundled.
-  # This is required for using `dart:ffi`.
-  # All these are used by the tooling to maintain consistency when
-  # adding or updating assets for this project.
   plugin:
     platforms:
-      android:
-        package: com.example.confidence_flutter_sdk
-        pluginClass: ConfidenceFlutterSdkPlugin
       ios:
-        pluginClass: ConfidenceFlutterSdkPlugin
+        pluginClass: ConfidenceLegacyCalendarPlugin

@@ -138,3 +138,11 @@ app.*.symbols
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
 !/dev/ci/**/Gemfile.lock
 !.vscode/settings.json
+
+# Preserved local checkout; no longer a provider dependency.
+/ios/Classes/
+/packages/confidence_openfeature_provider/
+
+# Retain old local native build caches without tracking or packaging them.
+/ios/confidence_flutter_sdk/
+**/.build/

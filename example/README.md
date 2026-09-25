@@ -1,16 +1,25 @@
-# confidence_flutter_sdk_example
+# Confidence OpenFeature example
 
-Demonstrates how to use the confidence_flutter_sdk plugin.
+From this directory run `flutter pub get`, then `flutter run` with an Confidence
+client secret and boolean property path:
 
-## Getting Started
+```sh
+flutter run --dart-define=CONFIDENCE_CLIENT_SECRET=... --dart-define=FLAG_KEY=example.enabled
+```
 
-This project is a starting point for a Flutter application.
+`CONFIDENCE_CLIENT_SECRET` supplies the client secret to the builder's `clientSecret`
+argument. It is compiled into the application, not kept confidential. Use the
+client secret for the app's Confidence flag client, not a management credential.
+`example.enabled` means flag `example`, property `enabled`.
 
-A few resources to get you started if this is your first Flutter project:
+The UI shows loading during registration and a generic message on initialization
+failure. The initial context includes both `targeting_key` (via `targetingKey`)
+and an explicit `user_id` attribute; use the fields your targeting rules expect.
+The pinned Dart SDK does not accept an initial context in `setProviderAndWait`,
+so this example sets it first. The Android main manifest includes `INTERNET`
+permission for release builds, as described in [setup](../README.md#toolchain-and-application-setup).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Without a key, the app displays setup instructions and makes no network requests.
+The example retains its old Android/iOS application IDs to allow same-app upgrade
+checks. It uses only the new provider and Flutter utilities; no old bridge or native
+Confidence SDK is linked. See [migration](../doc/migration.md) for the full contract.
