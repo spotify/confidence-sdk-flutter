@@ -3,20 +3,30 @@ name: Bot Path Test (temporary)
 # Temporary e2e verification for the lint-pr fix on this branch. Reproduces
 # release-please's exact bot conditions with the default GITHUB_TOKEN: opens a
 # throwaway PR, then pushes a commit onto its branch (the fold-in), using the
-# same git data API mechanics release-please uses. The fixed lint-pr.yaml on
-# this branch must fire on both bot events and FAIL 'Validate PR title'
-# (deliberately invalid title; the job, not just the run, must fail — a run
-# held for approval has zero jobs and must not count as a pass). Assertions
-# are scoped to the throwaway branch: the throwaway PR shares its head SHA
-# with this PR, so commit-level check-run queries would be ambiguous. Cleans
-# up its own artifacts. REMOVE THIS FILE once the evidence is captured — the
-# definitive real-world proof is the next release-please fold-in on main after
-# the lint-pr fix merges.
+# same git data API mechanics release-please uses (its ref updates provably
+# fire pull_request synchronize).
+#
+# The throwaway PR must NOT carry workflow-file changes in its diff: a PR from
+# a non-collaborator (the bot) that modifies .github/workflows makes GitHub
+# hold ALL its pull_request runs for manual approval ("action_required"),
+# which is exactly what killed the first two attempts (PRs #81/#82). A real
+# release-please PR only bumps versions, never touches workflows. So the test
+# points the throwaway PR at a bot-created base branch that already contains
+# this branch's head (including the fixed lint-pr.yaml); the PR diff is then
+# a single empty commit — workflow-clean, like the real thing.
+#
+# The fixed lint-pr.yaml must fire on both bot events and FAIL 'Validate PR
+# title' (deliberately invalid title; the job, not just the run, must fail —
+# a run held for approval has zero jobs and must not count as a pass).
+# Assertions are scoped to the throwaway branch because its head SHA is also
+# this PR's head SHA. Cleans up its own artifacts (PR, both branches).
+# REMOVE THIS FILE once the evidence is captured — the definitive real-world
+# proof is the next release-please fold-in on main after the lint-pr fix
+# merges.
 #
 # Launched by pushing to this branch: workflow_dispatch cannot target a
 # workflow file that is not on the default branch (the API returns 404),
-# while `push` runs the file as it exists on the pushed ref. This mirrors
-# release-please itself, which also runs on `push` and acts via GITHUB_TOKEN.
+# while `push` runs the file as it exists on the pushed ref.
 
 on:
   workflow_dispatch:
@@ -39,15 +49,29 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       TMP_BRANCH: bot-path-test-${{ github.run_number }}
+      BASE_BRANCH: bot-path-test-base-${{ github.run_number }}
       PR_TITLE: throwaway bot-path test ${{ github.run_number }} with invalid title
     steps:
-      - name: Create throwaway branch at this commit
+      - name: Create base + throwaway branches (bot refs at this commit)
         run: |
           set -euo pipefail
+          # Base branch: exactly this commit, so the throwaway PR's diff is
+          # workflow-clean (release-please PRs never modify workflow files).
+          gh api -X POST repos/spotify/confidence-sdk-flutter/git/refs \
+            -f "ref=refs/heads/$BASE_BRANCH" \
+            -f "sha=$GITHUB_SHA" --jq .ref
+          # Throwaway branch: one empty commit on top, so the PR is non-empty.
+          TREE=$(gh api "repos/spotify/confidence-sdk-flutter/git/commits/$GITHUB_SHA" --jq .tree.sha)
+          FOLDIN_1=$(gh api -X POST repos/spotify/confidence-sdk-flutter/git/commits \
+            -f "message=chore: bot-path test fold-in $GITHUB_RUN_NUMBER" \
+            -f "tree=$TREE" \
+            -F "parents[]=$GITHUB_SHA" \
+            --jq .sha)
           gh api -X POST repos/spotify/confidence-sdk-flutter/git/refs \
             -f "ref=refs/heads/$TMP_BRANCH" \
-            -f "sha=$GITHUB_SHA" \
-            --jq .ref
+            -f "sha=$FOLDIN_1" --jq .ref
+          echo "FOLDIN_1=$FOLDIN_1" >> "$GITHUB_ENV"
+          echo "base $BASE_BRANCH @ $GITHUB_SHA, head $TMP_BRANCH @ ${FOLDIN_1:0:8}"
 
       - name: Open PR via GITHUB_TOKEN (bot 'opened')
         run: |
@@ -55,16 +79,16 @@ jobs:
           PR_NUMBER=$(gh api -X POST repos/spotify/confidence-sdk-flutter/pulls \
             -f "title=$PR_TITLE" \
             -f "head=$TMP_BRANCH" \
-            -f "base=main" \
-            -f "body=Temporary throwaway PR opened with the default GITHUB_TOKEN to reproduce release-please's bot conditions for the lint-pr fix. Closed and deleted automatically by the test." \
+            -f "base=$BASE_BRANCH" \
+            -f "body=Temporary throwaway PR opened with the default GITHUB_TOKEN to reproduce release-please's bot conditions for the lint-pr fix. Its base branch already contains the fixed workflow, so this PR's diff (like a real release PR's) touches no workflow files. Closed and deleted automatically by the test." \
             --jq .number)
           echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
-          echo "Opened throwaway PR #$PR_NUMBER from $TMP_BRANCH @ $GITHUB_SHA"
+          echo "Opened throwaway PR #$PR_NUMBER: $TMP_BRANCH -> $BASE_BRANCH (head $FOLDIN_1)"
 
       - name: Assert 'Validate PR title' fired and failed (bot opened)
         run: |
           set -euo pipefail
-          sha="$GITHUB_SHA"
+          sha="$FOLDIN_1"
           phase="opened"
           status=""
           row=""
@@ -97,21 +121,21 @@ jobs:
       - name: Push fold-in commit via GITHUB_TOKEN (bot 'synchronize')
         run: |
           set -euo pipefail
-          TREE=$(gh api "repos/spotify/confidence-sdk-flutter/git/commits/$GITHUB_SHA" --jq .tree.sha)
-          NEW_SHA=$(gh api -X POST repos/spotify/confidence-sdk-flutter/git/commits \
-            -f "message=chore: bot-path test fold-in $GITHUB_RUN_NUMBER" \
+          TREE=$(gh api "repos/spotify/confidence-sdk-flutter/git/commits/$FOLDIN_1" --jq .tree.sha)
+          FOLDIN_2=$(gh api -X POST repos/spotify/confidence-sdk-flutter/git/commits \
+            -f "message=chore: bot-path test fold-in $GITHUB_RUN_NUMBER (2)" \
             -f "tree=$TREE" \
-            -F "parents[]=$GITHUB_SHA" \
+            -F "parents[]=$FOLDIN_1" \
             --jq .sha)
           gh api -X PATCH "repos/spotify/confidence-sdk-flutter/git/refs/heads/$TMP_BRANCH" \
-            -f "sha=$NEW_SHA" --jq .object.sha > /dev/null
-          echo "NEW_SHA=$NEW_SHA" >> "$GITHUB_ENV"
-          echo "Bot-pushed fold-in $NEW_SHA onto $TMP_BRANCH (parent $GITHUB_SHA)"
+            -f "sha=$FOLDIN_2" --jq .object.sha > /dev/null
+          echo "FOLDIN_2=$FOLDIN_2" >> "$GITHUB_ENV"
+          echo "Bot-pushed fold-in $FOLDIN_2 onto $TMP_BRANCH (parent $FOLDIN_1)"
 
       - name: Assert 'Validate PR title' fired and failed (bot synchronize)
         run: |
           set -euo pipefail
-          sha="$NEW_SHA"
+          sha="$FOLDIN_2"
           phase="synchronize"
           status=""
           row=""
@@ -153,7 +177,7 @@ jobs:
           echo "sticky pr-title-lint-error comment on throwaway PR #$PR_NUMBER: $present"
           echo "(informational: posting requires a writable token, which bot-actor or fork runs may lack; the check verdict asserted above is authoritative)"
 
-      - name: Cleanup throwaway PR and branch
+      - name: Cleanup throwaway PR and branches
         if: always()
         run: |
           set -euo pipefail
@@ -162,4 +186,5 @@ jobs:
               -f state=closed --jq .state > /dev/null || true
           fi
           gh api -X DELETE "repos/spotify/confidence-sdk-flutter/git/refs/heads/$TMP_BRANCH" || true
-          echo "cleaned up PR #${PR_NUMBER:-none} and branch $TMP_BRANCH"
+          gh api -X DELETE "repos/spotify/confidence-sdk-flutter/git/refs/heads/$BASE_BRANCH" || true
+          echo "cleaned up PR #${PR_NUMBER:-none}, branches $TMP_BRANCH and $BASE_BRANCH"
