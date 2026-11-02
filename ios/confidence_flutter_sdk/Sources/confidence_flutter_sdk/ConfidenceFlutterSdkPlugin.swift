@@ -1,6 +1,35 @@
 import Flutter
 import UIKit
 
+/// Replies to a `FlutterResult` exactly once, on the main thread.
+///
+/// Flutter requires channel replies on the main thread, and a second reply
+/// traps. The `Task {}` cases in this plugin resume on an arbitrary executor,
+/// so neither guarantee holds at the call site — both are enforced here.
+final class MainThreadResult {
+    private let delegate: FlutterResult
+    private var replied = false
+    private let lock = NSLock()
+
+    init(_ delegate: @escaping FlutterResult) {
+        self.delegate = delegate
+    }
+
+    func reply(_ value: Any?) {
+        lock.lock()
+        let alreadyReplied = replied
+        replied = true
+        lock.unlock()
+        if alreadyReplied { return }
+
+        if Thread.isMainThread {
+            delegate(value)
+        } else {
+            DispatchQueue.main.async { self.delegate(value) }
+        }
+    }
+}
+
 public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let channel = FlutterMethodChannel(name: "confidence_flutter_sdk", binaryMessenger: registrar.messenger())
@@ -59,35 +88,49 @@ public class ConfidenceFlutterSdkPlugin: NSObject, FlutterPlugin {
             result(confidence.isStorageEmpty())
             break;
         case "fetchAndActivate":
+            let fetchReply = MainThreadResult(result)
             Task {
                 guard let confidence = self.confidence else {
-                    result("")
+                    fetchReply.reply("")
                     return
                 }
                 do {
                     try await confidence.fetchAndActivate()
+                    fetchReply.reply("")
                 } catch {
-                    NSLog("%@", "Confidence SDK: \(error)")
+                    NSLog("%@", "Confidence SDK: fetchAndActivate failed: \(error)")
+                    fetchReply.reply(
+                        FlutterError(
+                            code: "FETCH_AND_ACTIVATE_FAILED",
+                            message: "\(error)",
+                            details: nil))
                 }
-                result("")
-                return
             }
             break;
         case "activateAndFetchAsync":
+            let activateReply = MainThreadResult(result)
             Task {
                 guard let confidence = self.confidence else {
-                    result("")
+                    activateReply.reply("")
                     return
                 }
                 do {
                     try confidence.activate()
                 } catch {
-                    NSLog("%@", "Confidence SDK: \(error)")
+                    NSLog("%@", "Confidence SDK: activate failed: \(error)")
+                    activateReply.reply(
+                        FlutterError(
+                            code: "ACTIVATE_AND_FETCH_ASYNC_FAILED",
+                            message: "\(error)",
+                            details: nil))
+                    return
                 }
+                // Deliberately not awaited: asyncFetch refreshes in the
+                // background and its outcome is not part of this reply.
                 Task {
                     await confidence.asyncFetch()
                 }
-                result("")
+                activateReply.reply("")
             }
             break;
         case "putContext":

@@ -1,6 +1,9 @@
 package com.example.confidence_flutter_sdk
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import com.spotify.confidence.Confidence
 import com.spotify.confidence.ConfidenceFactory
 import com.spotify.confidence.ConfidenceValue
@@ -19,6 +22,33 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
+
+private const val TAG = "ConfidenceFlutterSdk"
+
+/**
+ * Replies to a [Result] exactly once, on the platform (main) thread.
+ *
+ * Flutter requires channel replies on the main thread, and a second reply
+ * throws. The async cases in this plugin complete on [Dispatchers.IO], so
+ * neither guarantee holds at the call site — both are enforced here.
+ */
+private class MainThreadResult(private val delegate: Result) {
+  private val replied = AtomicBoolean(false)
+
+  fun success(value: Any?) = replyOnce { delegate.success(value) }
+
+  fun error(code: String, message: String?) = replyOnce { delegate.error(code, message, null) }
+
+  private fun replyOnce(reply: () -> Unit) {
+    if (!replied.compareAndSet(false, true)) return
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+      reply()
+    } else {
+      Handler(Looper.getMainLooper()).post(reply)
+    }
+  }
+}
 
 /** ConfidenceFlutterSdkPlugin */
 class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
@@ -68,16 +98,28 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         result.success(null)
       }
       "fetchAndActivate" -> {
+        val reply = MainThreadResult(result)
         coroutineScope.launch {
-          confidence.fetchAndActivate()
-          result.success(null)
+          try {
+            confidence.fetchAndActivate()
+            reply.success(null)
+          } catch (e: Throwable) {
+            Log.e(TAG, "fetchAndActivate failed", e)
+            reply.error("FETCH_AND_ACTIVATE_FAILED", e.message)
+          }
         }
       }
       "activateAndFetchAsync" -> {
+        val reply = MainThreadResult(result)
         coroutineScope.launch {
-          confidence.activate()
-          confidence.asyncFetch()
-          result.success(null)
+          try {
+            confidence.activate()
+            confidence.asyncFetch()
+            reply.success(null)
+          } catch (e: Throwable) {
+            Log.e(TAG, "activateAndFetchAsync failed", e)
+            reply.error("ACTIVATE_AND_FETCH_ASYNC_FAILED", e.message)
+          }
         }
       }
       "isStorageEmpty" -> {
@@ -116,10 +158,18 @@ class ConfidenceFlutterSdkPlugin: FlutterPlugin, MethodCallHandler, ActivityAwar
         result.success(Json.encodeToString(NetworkConfidenceValueSerializer, value))
       }
       "readAllFlags" -> {
+        val reply = MainThreadResult(result)
         coroutineScope.launch {
-          val flags = readAllFlags()
-          val map = flags.flags.associateBy({ it.flag }, { ConfidenceValue.Struct(it.value) })
-          result.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+          try {
+            val flags = readAllFlags()
+            val map = flags.flags.associateBy({ it.flag }, { ConfidenceValue.Struct(it.value) })
+            reply.success(Json.encodeToString(NetworkConfidenceValueSerializer, ConfidenceValue.Struct(map)))
+          } catch (e: Throwable) {
+            // A corrupt or partially written cache file makes decoding throw;
+            // without a reply the Dart future would never complete.
+            Log.e(TAG, "readAllFlags failed", e)
+            reply.error("READ_ALL_FLAGS_FAILED", e.message)
+          }
         }
       }
       "putContext" -> {
