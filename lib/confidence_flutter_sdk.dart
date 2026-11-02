@@ -36,6 +36,11 @@ class ConfidenceFlutterSdk {
     return resolveKey(key) ?? defaultValue;
   }
 
+  /// Resolves the flag value at the dot-separated [key] as [T].
+  ///
+  /// Note: resolving list/array flag values (e.g. `T` = `List<dynamic>`) is
+  /// deprecated. It keeps working for existing flags, but new flags should
+  /// not use list schemas. Lists in context and event data are unaffected.
   T? resolveKey<T>(String key) {
     List<String> keys = key.split(".");
     Map<String, dynamic> flags = _flags;

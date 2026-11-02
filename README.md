@@ -50,6 +50,8 @@ await confidence.getString("[FLAG]", "Default"))
 The schema of the property plays a crucial role in resolving the property, if the schema type matches the asked type, the value will be returned otherwise
 we expect default value to be returned.
 
+> **Deprecated:** list/array flag schemas and flag values are deprecated. Existing list flags continue to resolve (e.g. via `resolveKey<List<dynamic>>`), but new flags should avoid list properties. This applies only to flag values; lists in context and event data remain supported.
+
 ### Send custom Events
 we can send custom events to the confidence sdk like following:
 
