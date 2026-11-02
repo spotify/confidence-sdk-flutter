@@ -1,7 +1,19 @@
 name: 'Lint PR'
 
+# The release-please bot opens and force-pushes its release PR with the default
+# GITHUB_TOKEN. Bot-caused events never trigger pull_request_target workflows,
+# so this check never ran on a release PR. pull_request workflows do fire on
+# those same bot events, so lint from pull_request instead. Runs on bot PRs
+# are created pending approval and execute once a maintainer approves the
+# PR's workflows — the same approval the flutter checks on release PRs
+# already need during release prep.
+#
+# No explicit `permissions:` block: this workflow needs nothing beyond the
+# repository-default token (the sticky comments post fine with it; verified
+# e2e). On fork PRs the token is read-only, so the sticky-comment steps below
+# are non-fatal and can never mask the title validation itself.
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - edited
@@ -20,7 +32,10 @@ jobs:
       - uses: marocchino/sticky-pull-request-comment@v3
         # When the previous steps fails, the workflow would stop. By adding this
         # condition you can continue the execution with the populated error message.
+        # Commenting needs a writable token, which fork PRs don't provide in
+        # pull_request context — never fail the check because of that.
         if: always() && (steps.lint_pr_title.outputs.error_message != null)
+        continue-on-error: true
         with:
           header: pr-title-lint-error
           message: |
@@ -37,6 +52,7 @@ jobs:
       # Delete a previous comment when the issue has been resolved
       - if: ${{ steps.lint_pr_title.outputs.error_message == null }}
         uses: marocchino/sticky-pull-request-comment@v3
-        with:   
+        continue-on-error: true
+        with:
           header: pr-title-lint-error
           delete: true
