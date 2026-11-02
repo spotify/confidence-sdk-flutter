@@ -1,0 +1,146 @@
+name: Bot Path Test (temporary)
+
+# Temporary e2e verification for the lint-pr fix on this branch. Reproduces
+# release-please's exact bot conditions with the default GITHUB_TOKEN: opens a
+# throwaway PR, then pushes a commit onto its branch (the fold-in), using the
+# same git data API mechanics release-please uses. The fixed lint-pr.yaml on
+# this branch must fire on both bot events and FAIL 'Validate PR title'
+# (deliberately invalid title) and post the sticky failure comment. Cleans up
+# its own artifacts. REMOVE THIS FILE once the evidence is captured — the
+# definitive real-world proof is the next release-please fold-in on main after
+# the lint-pr fix merges.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: bot-path-test
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TMP_BRANCH: bot-path-test-${{ github.run_number }}
+      PR_TITLE: throwaway bot-path test ${{ github.run_number }} with invalid title
+    steps:
+      - name: Create throwaway branch at this commit
+        run: |
+          set -euo pipefail
+          gh api -X POST repos/spotify/confidence-sdk-flutter/git/refs \
+            -f "ref=refs/heads/$TMP_BRANCH" \
+            -f "sha=$GITHUB_SHA" \
+            --jq .ref
+
+      - name: Open PR via GITHUB_TOKEN (bot 'opened')
+        run: |
+          set -euo pipefail
+          PR_NUMBER=$(gh api -X POST repos/spotify/confidence-sdk-flutter/pulls \
+            -f "title=$PR_TITLE" \
+            -f "head=$TMP_BRANCH" \
+            -f "base=main" \
+            -f "body=Temporary throwaway PR opened with the default GITHUB_TOKEN to reproduce release-please's bot conditions for the lint-pr fix. Closed and deleted automatically by the test." \
+            --jq .number)
+          echo "PR_NUMBER=$PR_NUMBER" >> "$GITHUB_ENV"
+          echo "Opened throwaway PR #$PR_NUMBER from $TMP_BRANCH @ $GITHUB_SHA"
+
+      - name: Assert 'Validate PR title' fired and failed (bot opened)
+        run: |
+          set -euo pipefail
+          sha="$GITHUB_SHA"
+          phase="opened"
+          status=""
+          for i in $(seq 1 60); do
+            status=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+              --jq '[.check_runs[] | select(.name=="Validate PR title")][0].status' 2>/dev/null || echo none)
+            if [ "$status" = "completed" ]; then break; fi
+            echo "($phase) waiting for 'Validate PR title' on $sha ... attempt $i: $status"
+            sleep 10
+          done
+          if [ "$status" != "completed" ]; then
+            echo "::error::($phase) 'Validate PR title' check never appeared on $sha"
+            exit 1
+          fi
+          conclusion=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+            --jq '[.check_runs[] | select(.name=="Validate PR title")][0].conclusion')
+          url=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+            --jq '[.check_runs[] | select(.name=="Validate PR title")][0].html_url')
+          echo "($phase) 'Validate PR title' on $sha -> $conclusion ($url)"
+          if [ "$conclusion" != "failure" ]; then
+            echo "::error::($phase) expected 'failure' (invalid title) but got '$conclusion'"
+            exit 1
+          fi
+
+      - name: Push fold-in commit via GITHUB_TOKEN (bot 'synchronize')
+        run: |
+          set -euo pipefail
+          TREE=$(gh api "repos/spotify/confidence-sdk-flutter/git/commits/$GITHUB_SHA" --jq .tree.sha)
+          NEW_SHA=$(gh api -X POST repos/spotify/confidence-sdk-flutter/git/commits \
+            -f "message=chore: bot-path test fold-in $GITHUB_RUN_NUMBER" \
+            -f "tree=$TREE" \
+            -F "parents[]=$GITHUB_SHA" \
+            --jq .sha)
+          gh api -X PATCH "repos/spotify/confidence-sdk-flutter/git/refs/heads/$TMP_BRANCH" \
+            -f "sha=$NEW_SHA" --jq .object.sha > /dev/null
+          echo "NEW_SHA=$NEW_SHA" >> "$GITHUB_ENV"
+          echo "Bot-pushed fold-in $NEW_SHA onto $TMP_BRANCH (parent $GITHUB_SHA)"
+
+      - name: Assert 'Validate PR title' fired and failed (bot synchronize)
+        run: |
+          set -euo pipefail
+          sha="$NEW_SHA"
+          phase="synchronize"
+          status=""
+          for i in $(seq 1 60); do
+            status=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+              --jq '[.check_runs[] | select(.name=="Validate PR title")][0].status' 2>/dev/null || echo none)
+            if [ "$status" = "completed" ]; then break; fi
+            echo "($phase) waiting for 'Validate PR title' on $sha ... attempt $i: $status"
+            sleep 10
+          done
+          if [ "$status" != "completed" ]; then
+            echo "::error::($phase) 'Validate PR title' check never appeared on $sha"
+            exit 1
+          fi
+          conclusion=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+            --jq '[.check_runs[] | select(.name=="Validate PR title")][0].conclusion')
+          url=$(gh api "repos/spotify/confidence-sdk-flutter/commits/$sha/check-runs" \
+            --jq '[.check_runs[] | select(.name=="Validate PR title")][0].html_url')
+          echo "($phase) 'Validate PR title' on $sha -> $conclusion ($url)"
+          if [ "$conclusion" != "failure" ]; then
+            echo "::error::($phase) expected 'failure' (invalid title) but got '$conclusion'"
+            exit 1
+          fi
+
+      - name: Assert sticky failure comment was posted
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            n=$(gh api "repos/spotify/confidence-sdk-flutter/issues/$PR_NUMBER/comments" \
+              --jq 'map(select(.body | contains("Conventional Commits specification"))) | length' 2>/dev/null || echo 0)
+            if [ "${n:-0}" != "0" ]; then
+              echo "sticky pr-title-lint-error comment is present on PR #$PR_NUMBER"
+              exit 0
+            fi
+            echo "waiting for sticky comment ... attempt $i"
+            sleep 10
+          done
+          echo "::error::no sticky failure comment appeared on PR #$PR_NUMBER"
+          exit 1
+
+      - name: Cleanup throwaway PR and branch
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -n "${PR_NUMBER:-}" ]; then
+            gh api -X PATCH "repos/spotify/confidence-sdk-flutter/pulls/$PR_NUMBER" \
+              -f state=closed --jq .state > /dev/null || true
+          fi
+          gh api -X DELETE "repos/spotify/confidence-sdk-flutter/git/refs/heads/$TMP_BRANCH" || true
+          echo "cleaned up PR #${PR_NUMBER:-none} and branch $TMP_BRANCH"
