@@ -4,18 +4,21 @@ name: 'Lint PR'
 # GITHUB_TOKEN. Bot-caused events never trigger pull_request_target workflows,
 # so this check has never run on a release PR. pull_request workflows do fire
 # on those same bot events (verified across every 2026 release cycle), so lint
-# from pull_request instead. Trade-off: on fork PRs the pull_request token is
-# read-only, so the sticky-comment steps below are non-fatal — the title check
-# itself still runs for every PR.
+# from pull_request instead.
+#
+# Deliberately NO `permissions:` block: explicitly requesting elevated
+# permissions (pull-requests: write, used by the sticky comments) makes GitHub
+# hold runs from non-collaborator actors for manual approval ("required
+# approval but was not approved"), which would break this workflow on
+# release-please's bot PRs all over again. The repository-default token
+# suffices; on fork PRs it is read-only, so the sticky-comment steps below are
+# non-fatal and can never mask the title validation itself.
 on:
   pull_request:
     types:
       - opened
       - edited
       - synchronize
-
-permissions:
-  pull-requests: write
 
 jobs:
   main:
