@@ -9,9 +9,17 @@ name: Bot Path Test (temporary)
 # its own artifacts. REMOVE THIS FILE once the evidence is captured — the
 # definitive real-world proof is the next release-please fold-in on main after
 # the lint-pr fix merges.
+#
+# Launched by pushing to this branch: workflow_dispatch cannot target a
+# workflow file that is not on the default branch (the API returns 404),
+# while `push` runs the file as it exists on the pushed ref. This mirrors
+# release-please itself, which also runs on `push` and acts via GITHUB_TOKEN.
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - nicklasl/fix-lint-pr-bot-trigger
 
 permissions:
   contents: write
